@@ -1,6 +1,6 @@
 # TyömaaTunnit v0.2A — naatti21/Tuntiseuranta
 
-**Tila 22.10.2026:** ensimmäinen asennus- ja testipaketti. Käyttöliittymä on staattinen PWA, tietokanta ja käyttöoikeudet Supabasessa. Tarvitsee oman Supabase-projektin ja käyttäjät ennen kuin voi kirjautua. **Ei vielä tuotantoon, palkanlaskentaan tai viralliseksi työaikakirjanpidoksi.**
+**Tila 22.10.2026:** Supabase-projekti on perustettu Frankfurtin EU-alueelle, viisi taulua ja RLS-käyttöoikeudet asennettu, SQL-transaktioissa tehdyt valtuutus- ja hyväksyntätestit läpäisty, selaimen julkinen Supabase-yhteys asetettu `config.js`:ään. Todellisia Supabase Auth -testikäyttäjiä ei vielä ole ja GitHub Pagesin aktivointi on vahvistamatta. **Ei vielä tuotantoon, palkanlaskentaan tai viralliseksi työaikakirjanpidoksi.**
 
 ## Toiminnot
 
@@ -20,35 +20,25 @@
 4. Sovellustiedostot sijoitetaan repon juureen.
 5. Tiedostot voidaan julkaista suoraan GitHub-yhteyden kautta; seuraavat päivitykset tehdään vain muuttuneina tiedostoina.
 6. Settings → Pages → Deploy from a branch → `main` → `(root)`.
-7. Osoitteesta `https://naatti21.github.io/Tuntiseuranta/` aukeaa aluksi **Yhteys puuttuu** -sivu. Se on oikein, kunnes Supabase-konfiguraatio on annettu.
+7. Osoite Pages-julkaisun jälkeen: `https://naatti21.github.io/Tuntiseuranta/`. Yhteysasetukset on jo asennettu, joten kirjautumisnäkymän pitäisi avautua. Pages-julkaisua ei ole vielä vahvistettu.
 
-## Ensimmäinen Supabase-käyttöönotto (vain testitiedot)
+## Käyttöönoton seuraavat vaiheet (vain tekaistut testihenkilöt)
 
-1. Luo Supabase-projekti, valitse EU-alue (esimerkiksi Frankfurt) ja säästä tietokannan salasana turvallisesti. Projektia ei voi määrittää vain lähdekoodin perusteella.
-2. Avaa SQL Editor ja suorita `supabase/migrations/20261022_001_pilot.sql` **kerran uuteen tyhjään projektiin**. Älä aja sitä vanhan tuotantotietokannan päälle.
-3. Luo yritys SQL Editorissa:
+**Supabase-projektia, yritystä tai tietokantamigraatiota ei pidä perustaa tai ajaa toistamiseen. Ne ovat jo olemassa.**
 
-   ```sql
-   insert into public.organizations(name) values ('Testiyritys Oy') returning id;
-   ```
+- Supabase Dashboard: https://supabase.com/dashboard/project/cnctirhpaxtaxtegnscq
+- Organisaatio: Naatti äpps; projekti: Tuntiseuranta; EU Frankfurt.
+- Tietokannassa on väliaikainen yritys **Pilottiyritys (testi)** ja työmaa **Testityömaa (TEST-001)**. Näillä ei tarkoiteta oikeaa asiakas- tai työnantajayritystä.
+- Supabase URL ja **julkinen** `sb_publishable_...`-avain on jo lisätty GitHubin `config.js`-tiedostoon. Salaisia avaimia ei saa tallentaa sinne.
 
-   Kopioi palautunut `organization_id` (UUID).
-4. Luo kaksi testikäyttäjää **Authentication → Users → Add user → Send invitation**. Käytä testisähköposteja, joihin on oikea pääsy; jotta käyttäjä voi käyttää kirjautumissivua, hänen on asetettava salasana kutsulinkin kautta. Lisää `https://naatti21.github.io/Tuntiseuranta/` Supabase Auth → URL Configuration → Redirect URLs -sivulle ja halutessasi Site URL -arvoksi.
-5. Katso käyttäjien UUID-tunnukset Authentication → Users -näkymästä. Liitä testikäyttäjät yritykseen SQL Editorissa (korvaa paikkamerkit oikeilla UUID-arvoilla):
+1. Kytke GitHub Pages: repon Settings → Pages → Deploy from a branch → `main` / `(root)` → Save.
+2. Avaa Supabase Dashboard → **Authentication → Users → Add user** ja luo oma **testitunnus sähköpostilla sekä yksilöllisellä salasanalla**. Käytä osoitetta, johon pääset. Älä lähetä salasanaa tai mitään avainta ChatGPT-keskusteluun.
+3. Luo myöhemmin ainakin toinen testitunnus eri osoitteelle työntekijäroolia varten; erillinen toinen hyväksyjä tarvitaan, jos työnjohto kirjaa myös toisten tunnit.
+4. Näille testitunnuksille tehdään jäsenyydet `public.memberships`-tauluun. Kerro keskustelussa **vain että tunnukset on luotu**; ChatGPT voi listata kirjautumistunnusten UUID:t Supabase-yhteydellä ja liittää roolit SQL:n kautta ilman että sinun tarvitsee käsitellä UUID:itä puhelimella.
+5. Jos käytät kutsulinkkejä tai salasanan palautusta, määritä Supabase Dashboard → Authentication → URL Configuration → **Site URL / Redirect URLs** osoitteeseen `https://naatti21.github.io/Tuntiseuranta/`. Osoite on kirjainkokoriippuvainen.
+6. Testaa kirjautuminen ja kirjaaminen kahdessa eri selainprofiilissa tai puhelimessa. Tee testit vain tekaistuilla tiedoilla, kunnes testauslista sekä tietosuojan ja varmuuskopioinnin käytännöt on hyväksytty.
 
-   ```sql
-   insert into public.memberships(organization_id, user_id, display_name, role)
-   values
-     ('YRITYKSEN_UUID', 'ADMIN_KAYTTAJAN_UUID', 'Testipääkäyttäjä', 'admin'),
-     ('YRITYKSEN_UUID', 'TYONTEKIJAN_UUID', 'Testityöntekijä', 'employee');
-   ```
-
-   Lisää halutessasi kolmas `supervisor`-testikäyttäjä.
-6. Avaa Supabase Project Settings → API Keys ja kopioi **Project URL** sekä **publishable key** tiedostoon `config.js` (`window.APP_CONFIG`). `config.js`:n julkinen avain on sallittu selaimessa **vain RLS-suojausten kanssa**. Älä koskaan lisää `secret`, `service_role` tai tietokannan salasanaa GitHubiin.
-7. Korvaa GitHubissa vain `config.js`, jonka polku on repon juuressa. Päivitä PWA ja kirjaudu testeihin.
-8. Työmaat-välilehdellä pääkäyttäjä luo yhden testityömaan. Kokeile työntekijän ja pääkäyttäjän tunnuksia **eri puhelimilla tai eri selainprofiileissa**.
-
-Huomaa: ensimmäisen kutsulinkin käsittely riippuu Supabasen Auth-asetuksista. Testaa itse, että kutsu tuo käyttäjän sovellukseen ja että salasanan asetus onnistuu; tarvittaessa alkuvaiheen testikäyttäjät voidaan luoda Supabase Dashboardissa salasanoineen. Älä lähetä salasanoja tavallisina viesteinä.
+**Ei tehdä tässä vaiheessa:** oikeiden työntekijätietojen käsittelyä tai virallista työaikakirjanpitoa. Supabasen automaattinen turvallisuustarkistus ei löytänyt huomautuksia, mutta täydellinen selaimen käyttötapaustestaus on vielä tehtävä.
 
 ## Repon tiedostot
 
@@ -57,7 +47,7 @@ Huomaa: ensimmäisen kutsulinkin käsittely riippuu Supabasen Auth-asetuksista. 
 | `index.html` | Mobiilikäyttöliittymä |
 | `styles.css` | Tyylit |
 | `app.js` | Supabase-kirjautuminen ja kirjaukset |
-| `config.js` | URL + JULKINEN publishable key (täydennetään käyttöönotossa) |
+| `config.js` | Projektin URL + JULKINEN publishable key (asetettu) |
 | `manifest.webmanifest` | PWA-asetukset |
 | `sw.js` | Vain staattisen sovelluskuoren välimuisti |
 | `icons/*` | PWA-kuvakkeet |
@@ -80,7 +70,7 @@ Huomaa: ensimmäisen kutsulinkin käsittely riippuu Supabasen Auth-asetuksista. 
 - Tietokantafunktioiden `security definer` -runko on `private`-skeemassa, jota ei saa lisätä Supabasen *Exposed schemas* -listaan. Julkiset RPC:t ovat `security invoker` -kuoria.
 - Audit-loki on normaalikäyttäjille vain luettava. Palauttaminen/korjaaminen tallentaa uuden tapahtuman.
 - Julkisen koodin jakelu ei tarkoita julkisia tuntitietoja. Todellinen tietosuoja riippuu myös Supabase-projektin asetuksista, SQL:n testauksesta, käyttöoikeuksista ja hallinnollisista käytännöistä.
-- Koodin staattinen tarkistus tai mock-selaintesti **ei ole** Supabase RLS:n integraatiotesti.
+- Tietokantaa vasten on tehty palautettavan SQL-transaktion sisällä RLS-, kirjaus- ja hyväksyntätestit; oikean Supabase Auth -istunnon ja selaimen läpi tehtävä käyttäjätestaus on silti avoinna.
 
 ## Päivitysten julkaisu
 
@@ -88,7 +78,7 @@ Päivityksissä toimitetaan käyttäjälle **vain muuttuneet tiedostot** sekä n
 
 ## Pilotin käyttöönoton tila
 
-- Repon lähdekoodi voidaan julkaista ilman Supabase-tunnuksia, mutta sovelluksessa näkyy silloin **Yhteys puuttuu**.
+- Sovelluksen Supabase-konfiguraatio on asennettu; kirjautuminen vaatii, että käyttäjät luodaan Authissa ja liitetään jäsenyyksiin.
 - **GitHub Pages** pitää kytkeä erikseen päälle, jos se ei ole jo käytössä.
 - Todellisia työntekijätietoja ei syötetä ennen käyttöoikeus- ja varmuuskopiointitestien läpäisyä.
 - Aikojen lomake käyttää tällä hetkellä laitteen paikallista aikavyöhykettä; suomalaisessa pilotissa laitteiden tulee olla Europe/Helsinki-asetuksessa. DST-rajan tarkistus on vielä avoin.
