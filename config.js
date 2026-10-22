@@ -1,8 +1,8 @@
-/* VAIN julkinen Supabase publishable key tähän tiedostoon.
- * Älä koskaan liitä secret key / service_role -avainta.
- * Osoite ja julkinen avain ovat tarkoituksella näkyvissä selaimessa.
+/* TyömaaTunnit — Supabase julkaistava yhteys.
+ * Supabase publishable key on JULKINEN ja kuuluu selaimeen.
+ * Älä koskaan lisää service_role-, secret-avainta tai DB-salasanaa tähän.
  */
 window.APP_CONFIG = {
-  url: '',
-  publishableKey: ''
+  url: 'https://cnctirhpaxtaxtegnscq.supabase.co',
+  publishableKey: 'sb_publishable_JwvzhzvEmxr6bzGHG7gCCA_yTOWe1hO'
 };
