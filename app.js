@@ -1,4 +1,4 @@
-/* TyömaaTunnit 0.2A: yksi yritys, kirjautuminen ja Postgres/RLS.
+/* TyömaaTunnit 0.2A.1: yksi yritys, kirjautuminen ja Postgres/RLS.
  * Ei paikallista työaikatietojen tallennusta. Ei salaisia avaimia selaimessa.
  */
 'use strict';
@@ -74,6 +74,8 @@ function resetForm() {
   $('edit-tag').classList.add('hidden'); $('cancel-edit').classList.add('hidden');
   $('reason-field').classList.add('hidden');$('reason').required=false;
   $('submit-entry').textContent='Lähetä tunnit';
+  // Poista vain korjaukseen tilapäisesti lisätty arkistoitu työmaa normaalilomakkeelta.
+  fillSelect('worksite',sites.filter(s=>s.active).map(s=>({value:s.id,label:s.name+(s.code?` (${s.code})`: '')})),'Valitse työmaa');
   if (members.length && isLead()) $('worker').value = session?.user?.id || '';
   calculate();
 }
@@ -165,13 +167,49 @@ function renderLead() {
   $('lead-list').innerHTML=rows.length?rows.map(e=>makeEntryCard(e,true)).join(''):'<p class="muted">Ei tällä suodatuksella kirjauksia.</p>';
 }
 function renderSites() {
-  if(!isAdmin())return;
-  $('sites-list').innerHTML=sites.length?sites.map(s=>`<div class="entry"><strong>${esc(s.name)}</strong><p class="muted">${esc(s.code||'Ei koodia')} • ${s.active?'Aktiivinen':'Arkistoitu'}</p></div>`).join(''):'<p class="muted">Työmaita ei vielä ole.</p>';
+  if (!isAdmin()) return;
+  const activeSites=sites.filter(s=>s.active);
+  const archivedSites=sites.filter(s=>!s.active);
+  const item=s=>`<article class="entry">
+    <div class="entry-top"><h3>${esc(s.name)}</h3><span class="status ${s.active?'approved':'needs_changes'}">${s.active?'Käytössä':'Arkistoitu'}</span></div>
+    <p class="muted">${esc(s.code||'Ei koodia')}</p>
+    <div class="actions">
+      <button type="button" class="btn ghost" data-site-action="${s.active?'archive':'restore'}" data-site-id="${esc(s.id)}">
+        ${s.active?'Arkistoi':'Palauta käyttöön'}
+      </button>
+    </div>
+  </article>`;
+  $('sites-list').innerHTML=
+    `<h3>Aktiiviset (${activeSites.length})</h3>`+
+    (activeSites.length?activeSites.map(item).join(''):'<p class="muted">Ei aktiivisia työmaita.</p>')+
+    `<h3>Arkistoidut (${archivedSites.length})</h3>`+
+    (archivedSites.length?archivedSites.map(item).join(''):'<p class="muted">Ei arkistoituja työmaita.</p>');
+}
+async function handleSiteAction(event) {
+  const button=event.target.closest('button[data-site-action][data-site-id]');
+  if(!button || !isAdmin())return;
+  const site=sites.find(s=>s.id===button.dataset.siteId);
+  if(!site)return;
+  const restoring=button.dataset.siteAction==='restore';
+  if(!restoring && button.dataset.siteAction!=='archive')return;
+  if(site.active===restoring)return;
+  if(!restoring && !window.confirm(`Arkistoidaanko työmaa "${site.name}"? Se poistuu uusista kirjauksista, mutta kaikki vanhat tunnit ja raporttihistoria säilyvät.`))return;
+  await doBusy(async()=>{
+    const {error}=await client.rpc('set_worksite_active',{p_worksite_id:site.id,p_active:restoring});
+    if(error)throw error;
+    await loadData();setView('sites');
+    feedback(restoring?'Työmaa palautettu käyttöön.':'Työmaa arkistoitu. Aiemmat tuntikirjaukset säilyvät.');
+  });
 }
 function editEntry(id) {
   const e=entries.find(x=>x.id===id);
   if(!e || e.status==='approved' || !isLead() && (e.employee_id!==session.user.id || e.status!=='needs_changes'))return;
   editId=id;
+  const entrySite=sites.find(s=>s.id===e.worksite_id);
+  if(entrySite && !entrySite.active) {
+    // Historiallisen kirjauksen korjaaminen on sallittu alkuperäiselle arkistoidulle työmaalle.
+    $('worksite').add(new Option(`${entrySite.name} (arkistoitu – vain tämän kirjauksen korjaus)`,entrySite.id));
+  }
   $('worksite').value=e.worksite_id;
   $('worker').value=e.employee_id;
   const start=localDateTime(e.start_at),end=localDateTime(e.end_at);
@@ -268,6 +306,7 @@ function wire() {
   $('csv-export').addEventListener('click',exportCsv);
   $('refresh-mine').addEventListener('click',loadData);
   $('refresh-lead').addEventListener('click',loadData);
+  $('sites-list').addEventListener('click',handleSiteAction);
   $('site-form').addEventListener('submit',async event=>{
     event.preventDefault();if(!isAdmin())return;
     await doBusy(async()=>{
