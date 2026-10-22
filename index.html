@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="brand-icon">TT</span><div><strong>TyömaaTunnit</strong><small>Yrityspilotti • v0.2A</small></div></div>
+    <div class="brand"><span class="brand-icon">TT</span><div><strong>TyömaaTunnit</strong><small>Yrityspilotti • v0.2A.1</small></div></div>
     <button id="logout" class="btn ghost hidden" type="button">Kirjaudu ulos</button>
   </header>
   <main class="container">
@@ -73,7 +73,9 @@
       <section id="view-sites" class="view card hidden">
         <p class="eyebrow">Pääkäyttäjä</p><h2>Lisää työmaa</h2>
         <form id="site-form" class="stack"><label>Työmaan nimi<input id="site-name" maxlength="120" minlength="2" required placeholder="Esim. Keskustan saneeraus"/></label><label>Koodi (valinnainen)<input id="site-code" maxlength="32" placeholder="TM-101"/></label><button class="btn primary" type="submit">Lisää työmaa</button></form>
-        <h3>Käytössä olevat työmaat</h3><div id="sites-list" class="entries"></div>
+        <h3>Työmaiden hallinta</h3>
+        <p class="muted">Arkistointi piilottaa työmaan uusista kirjauksista. Vanhoja tunteja ei poisteta. Voit palauttaa työmaan käyttöön myöhemmin.</p>
+        <div id="sites-list" class="entries"></div>
         <p class="muted tiny">Työntekijät lisätään v0.2A:ssa Supabasen käyttäjähallinnassa; sovelluksen kutsutoiminto tulee myöhemmin.</p>
       </section>
       <section id="view-account" class="view card hidden">
@@ -82,7 +84,7 @@
         <p class="muted tiny">Älä käytä samaa salasanaa muissa palveluissa. Pääkäyttäjällä ei ole pääsyä käyttäjän salasanaan.</p>
       </section>
     </section>
-    <footer>TyömaaTunnit v0.2A • Verkkoyhteys tarvitaan tallennukseen • Ei vielä hyväksytty viralliseen työaikakirjanpitoon</footer>
+    <footer>TyömaaTunnit v0.2A.1 • Verkkoyhteys tarvitaan tallennukseen • Ei vielä hyväksytty viralliseen työaikakirjanpitoon</footer>
   </main>
   <script src="./config.js"></script>
   <script type="module" src="./app.js"></script>
