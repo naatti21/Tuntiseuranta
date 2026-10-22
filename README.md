@@ -1,4 +1,4 @@
-# TyömaaTunnit v0.2A — naatti21/Tuntiseuranta
+# TyömaaTunnit v0.2A.1 — naatti21/Tuntiseuranta
 
 **Tila 22.10.2026:** Supabase-projekti on perustettu Frankfurtin EU-alueelle, viisi taulua ja RLS-käyttöoikeudet asennettu, SQL-transaktioissa tehdyt valtuutus- ja hyväksyntätestit läpäisty, selaimen julkinen Supabase-yhteys asetettu `config.js`:ään. Todellisia Supabase Auth -testikäyttäjiä ei vielä ole ja GitHub Pagesin aktivointi on vahvistamatta. **Ei vielä tuotantoon, palkanlaskentaan tai viralliseksi työaikakirjanpidoksi.**
 
@@ -6,7 +6,7 @@
 
 - Työntekijä kirjautuu henkilökohtaisella tunnuksella ja kirjaa omat tunnit työmaittain.
 - Työnjohto näkee **pilotissa kaikki saman yrityksen työntekijät** ja voi kirjata heidän puolestaan, palauttaa sekä hyväksyä kirjauksia.
-- Pääkäyttäjä voi lisätä työmaita.
+- Pääkäyttäjä voi lisätä, arkistoida ja palauttaa työmaita. Arkistointi ei koskaan poista aiempia tuntikirjauksia; uudet kirjaukset estetään arkistoiduille työmaille. Vanhoja, vielä korjattavia merkintöjä voi oikaista alkuperäiselle arkistoidulle työmaalle.
 - Hyväksytty merkintä lukitaan. Korjaus ja hyväksyntä tallentuvat tietokannan muutoslokiin.
 - Työnjohto voi viedä CSV-raportin näkyvistä kirjauksista. Näytetään enintään 1000 uusinta kirjausta; täydet raportit ja sivutus seuraavassa versiossa.
 - Työmaan vaihto kesken päivän: tee toinen erillinen kirjaus. Päällekkäiset aikavälit hylätään palvelimella.
@@ -86,3 +86,9 @@ Päivityksissä toimitetaan käyttäjälle **vain muuttuneet tiedostot** sekä n
 - **GitHub Pages** pitää kytkeä erikseen päälle, jos se ei ole jo käytössä.
 - Todellisia työntekijätietoja ei syötetä ennen käyttöoikeus- ja varmuuskopiointitestien läpäisyä.
 - Aikojen lomake käyttää tällä hetkellä laitteen paikallista aikavyöhykettä; suomalaisessa pilotissa laitteiden tulee olla Europe/Helsinki-asetuksessa. DST-rajan tarkistus on vielä avoin.
+## Päivitys v0.2A.1 – 22.10.2026
+
+- Työmaan arkistointi ja palautus: **Työmaat** → **Arkistoi** / **Palauta käyttöön**.
+- Kummankaan toiminnon ei pidä poistaa tuntikirjauksia, muutoslokia tai raporttihistoriaa.
+- Tietokanta estää uudet kirjaukset arkistoidulle työmaalle; palautetun kirjauksen korjaus alkuperäiseen kohteeseen pysyy sallittuna.
+- CSV-vientiä tai palkanlaskijan yhteenvetoa ei muutettu: muotoilu päätetään yhdessä yrityksen kanssa.
