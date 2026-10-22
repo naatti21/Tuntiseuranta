@@ -32,3 +32,7 @@ V0.2A on käytännön kokeilu, **ei työaikakirjanpidon tai tietosuojan vaatimus
 - [ ] Selaintesti: arkistointi näkyy pääkäyttäjän puhelimessa ja poistuu työntekijän uusien tuntien valikosta.
 - [ ] Selaintesti: vanha työmaa näkyy edelleen olemassa olevissa kirjauksissa ja CSV:ssä.
 - [ ] Selaintesti: palautus näkyy molemmille käyttäjille uuden latauksen jälkeen.
+
+## Tietoturvan avoin asetus
+
+- [ ] Supabase Auth: **Leaked Password Protection** on poissa käytöstä (Security Advisor, 22.10.2026). Ota se käyttöön ennen oikeiden henkilötietojen ja työaikakirjausten käsittelyä: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
