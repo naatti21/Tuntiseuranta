@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="fi">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#10273b"/>
+  <meta name="description" content="TyömaaTunnit — yhden yrityksen pilotti."/>
+  <title>TyömaaTunnit | Pilotti</title>
+  <link rel="manifest" href="./manifest.webmanifest"/>
+  <link rel="icon" href="./icons/icon-192.png"/>
+  <link rel="stylesheet" href="./styles.css"/>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-icon">TT</span><div><strong>TyömaaTunnit</strong><small>Yrityspilotti • v0.2A</small></div></div>
+    <button id="logout" class="btn ghost hidden" type="button">Kirjaudu ulos</button>
+  </header>
+  <main class="container">
+    <div id="banner" class="banner hidden" role="status" aria-live="polite"></div>
+    <section id="setup" class="card hidden">
+      <h1>Yhteys puuttuu</h1>
+      <p>Lisää uuden Supabase-projektisi osoite ja julkinen publishable key <code>config.js</code>-tiedostoon. Kirjautuminen ja yhteinen tallennus eivät ole käytössä ennen sitä.</p>
+      <p class="muted">Älä lisää GitHubiin salaisia service-role- tai secret-avaimia.</p>
+    </section>
+    <section id="login" class="card auth hidden">
+      <p class="eyebrow">Yhden yrityksen pilotti</p>
+      <h1>Kirjaudu sisään</h1>
+      <p class="muted">Käytä henkilökohtaista, työnjohdon luomaa tunnusta.</p>
+      <form id="login-form" class="stack">
+        <label>Sähköposti<input id="email" type="email" required autocomplete="username" placeholder="etunimi@yritys.fi"/></label>
+        <label>Salasana<input id="password" type="password" required autocomplete="current-password"/></label>
+        <button class="btn primary" type="submit">Kirjaudu</button>
+      </form>
+      <p class="muted tiny">Kutsulinkin kautta sisäänkirjautunut voi asettaa salasanan omissa asetuksissa.</p>
+    </section>
+    <section id="app" class="hidden">
+      <div class="hello">
+        <div><p class="eyebrow" id="company">Yritys</p><h1 id="person">Tervetuloa</h1><p id="role-label" class="muted"></p></div>
+        <span id="connection" class="connect online">Verkkoyhteys vaaditaan</span>
+      </div>
+      <nav class="tabs" aria-label="Päävalikko">
+        <button type="button" data-view="new" class="tab active">Kirjaa</button>
+        <button type="button" data-view="mine" class="tab">Omat tunnit</button>
+        <button type="button" data-view="lead" class="tab lead-only hidden">Työnjohto</button>
+        <button type="button" data-view="sites" class="tab admin-only hidden">Työmaat</button>
+        <button type="button" data-view="account" class="tab">Tili</button>
+      </nav>
+      <section id="view-new" class="view card">
+        <div class="section-title"><div><p class="eyebrow">Uusi merkintä</p><h2>Kirjaa työtunnit</h2></div><span id="edit-tag" class="status hidden">Korjaus</span></div>
+        <p class="muted">Yksi rivi = yksi työmaa ja yksi aikaväli. Lisää päivän toinen työmaa omana kirjauksenaan.</p>
+        <form id="entry-form" class="stack">
+          <label class="lead-only hidden">Työntekijä<select id="worker" required></select></label>
+          <label>Työmaa<select id="worksite" required></select></label>
+          <label>Päivämäärä<input id="work-date" type="date" required/></label>
+          <div class="two"><label>Alkaa<input id="start" type="time" value="07:00" required/></label><label>Päättyy<input id="end" type="time" value="15:00" required/></label></div>
+          <label>Palkaton tauko (min)<input id="break" type="number" min="0" max="1439" value="30" step="1" required/></label>
+          <div class="total"><span>Kirjattava työaika</span><strong id="net-time">7 h 30 min</strong></div>
+          <label>Lisätiedot (valinnainen)<textarea id="note" rows="2" maxlength="500" placeholder="Esim. asennustyö, korjaus..."></textarea></label>
+          <label id="reason-field" class="hidden">Korjauksen perustelu<textarea id="reason" rows="2" minlength="3" maxlength="500" placeholder="Miksi kirjausta korjataan?"></textarea></label>
+          <div class="actions"><button type="submit" id="submit-entry" class="btn primary">Lähetä tunnit</button><button type="button" id="cancel-edit" class="btn ghost hidden">Peruuta korjaus</button></div>
+        </form>
+      </section>
+      <section id="view-mine" class="view card hidden">
+        <div class="section-title"><div><p class="eyebrow">Henkilökohtainen seuranta</p><h2>Omat tunnit</h2></div><button id="refresh-mine" class="btn ghost" type="button">Päivitä</button></div>
+        <div id="mine-summary" class="summary"></div><div id="mine-list" class="entries"></div>
+      </section>
+      <section id="view-lead" class="view card hidden">
+        <div class="section-title"><div><p class="eyebrow">Työnjohto</p><h2>Kaikkien kirjaukset</h2></div><button id="refresh-lead" class="btn ghost" type="button">Päivitä</button></div>
+        <div class="two"><label>Työntekijä<select id="filter-worker"></select></label><label>Tila<select id="filter-status"><option value="">Kaikki</option><option value="submitted">Odottaa hyväksyntää</option><option value="needs_changes">Palautettu</option><option value="approved">Hyväksytty</option></select></label></div>
+        <div class="actions"><button id="csv-export" class="btn secondary" type="button">Vie näkyvät CSV</button></div>
+        <div id="lead-summary" class="summary"></div><div id="lead-list" class="entries"></div>
+      </section>
+      <section id="view-sites" class="view card hidden">
+        <p class="eyebrow">Pääkäyttäjä</p><h2>Lisää työmaa</h2>
+        <form id="site-form" class="stack"><label>Työmaan nimi<input id="site-name" maxlength="120" minlength="2" required placeholder="Esim. Keskustan saneeraus"/></label><label>Koodi (valinnainen)<input id="site-code" maxlength="32" placeholder="TM-101"/></label><button class="btn primary" type="submit">Lisää työmaa</button></form>
+        <h3>Käytössä olevat työmaat</h3><div id="sites-list" class="entries"></div>
+        <p class="muted tiny">Työntekijät lisätään v0.2A:ssa Supabasen käyttäjähallinnassa; sovelluksen kutsutoiminto tulee myöhemmin.</p>
+      </section>
+      <section id="view-account" class="view card hidden">
+        <p class="eyebrow">Oma tili</p><h2>Vaihda tai aseta salasana</h2>
+        <form id="password-form" class="stack"><label>Uusi salasana<input id="new-password" type="password" minlength="12" autocomplete="new-password" required/></label><button class="btn secondary" type="submit">Päivitä salasana</button></form>
+        <p class="muted tiny">Älä käytä samaa salasanaa muissa palveluissa. Pääkäyttäjällä ei ole pääsyä käyttäjän salasanaan.</p>
+      </section>
+    </section>
+    <footer>TyömaaTunnit v0.2A • Verkkoyhteys tarvitaan tallennukseen • Ei vielä hyväksytty viralliseen työaikakirjanpitoon</footer>
+  </main>
+  <script src="./config.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
