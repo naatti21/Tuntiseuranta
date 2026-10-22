@@ -1,5 +1,5 @@
 /* Välimuistiin tallennetaan vain julkiset sovellustiedostot, ei työaika- eikä kirjautumistietoja. */
-const CACHE = 'tyomaatunnit-shell-v02a-1';
+const CACHE = 'tyomaatunnit-shell-v02a-2';
 const ASSETS = ['./', './index.html', './styles.css', './app.js', './config.js', './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(cache => cache.addAll(ASSETS)));
