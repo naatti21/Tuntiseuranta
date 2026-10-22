@@ -22,3 +22,13 @@
 - [ ] Määrittele yrityksen tietosuoja-/rekisterinpitäjäkäytännöt, tallenteiden säilytys ja palautettava varmuuskopio ennen oikeaa käyttöä.
 
 V0.2A on käytännön kokeilu, **ei työaikakirjanpidon tai tietosuojan vaatimustenmukaisuussertifiointi**.
+## v0.2A.1 – työmaan arkistointi
+
+- [x] SQL-transaktiotesti: pääkäyttäjän arkistointi ja palautus toimivat.
+- [x] SQL-transaktiotesti: arkistointi ei poista vanhaa kirjausta.
+- [x] SQL-transaktiotesti: uusi kirjaus arkistoidulle työmaalle estetään.
+- [x] SQL-transaktiotesti: vanhan palautettavissa olevan kirjauksen korjaus onnistuu arkistoinnin jälkeen.
+- [x] SQL-transaktiotesti: työntekijä ei voi palauttaa työmaata.
+- [ ] Selaintesti: arkistointi näkyy pääkäyttäjän puhelimessa ja poistuu työntekijän uusien tuntien valikosta.
+- [ ] Selaintesti: vanha työmaa näkyy edelleen olemassa olevissa kirjauksissa ja CSV:ssä.
+- [ ] Selaintesti: palautus näkyy molemmille käyttäjille uuden latauksen jälkeen.
