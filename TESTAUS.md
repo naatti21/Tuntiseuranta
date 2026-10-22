@@ -1,6 +1,6 @@
 # TyömaaTunnit v0.2A – pilotin hyväksymistestit
 
-**Tila:** Suunniteltu, ei vielä ajettu oikeaa Supabasea vasten.
+**Tila 22.10.2026:** tietokantaskeema asennettu, Supabasen Security Advisors: 0 turvallisuushuomautusta. SQL-transaktion sisällä läpäisty omien tuntien kirjaaminen, työnjohdon kirjaaminen, luvaton puolesta kirjaaminen, hyväksymiskielto, hyväksyminen toisella henkilöllä, päällekkäisyysesto, lokimerkinnät ja suorien taulupäivitysten esto. Testidatat peruttiin ROLLBACKilla. Alla olevat selaimen ja oikeiden Auth-istuntojen testit ovat edelleen tekemättä.
 
 - [ ] Käytä vain tekaistuja nimiä ja tunteja ensimmäisissä testeissä.
 - [ ] Työntekijä A voi luoda omat tunnit ja nähdä ne toisessa saman tunnuksen puhelimessa.
