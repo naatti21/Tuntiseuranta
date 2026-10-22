@@ -24,6 +24,10 @@
 
 ## Käyttöönoton seuraavat vaiheet (vain tekaistut testihenkilöt)
 
+**Valmistunut 22.10.2026:** Supabase Authissa luodut kaksi ensimmäistä testikäyttäjää on liitetty pilottiyritykseen: ensimmäinen `admin`, toinen `employee`. Molempien sähköposti ja salasana on vahvistettu. RLS-testissä työntekijä näki yhden jäsenyyden ja pääkäyttäjä kaksi. Varsinainen selainkirjautuminen sekä tuntien luonti on vielä testattava.
+
+
+
 **Supabase-projektia, yritystä tai tietokantamigraatiota ei pidä perustaa tai ajaa toistamiseen. Ne ovat jo olemassa.**
 
 - Supabase Dashboard: https://supabase.com/dashboard/project/cnctirhpaxtaxtegnscq
@@ -32,9 +36,9 @@
 - Supabase URL ja **julkinen** `sb_publishable_...`-avain on jo lisätty GitHubin `config.js`-tiedostoon. Salaisia avaimia ei saa tallentaa sinne.
 
 1. Kytke GitHub Pages: repon Settings → Pages → Deploy from a branch → `main` / `(root)` → Save.
-2. Avaa Supabase Dashboard → **Authentication → Users → Add user** ja luo oma **testitunnus sähköpostilla sekä yksilöllisellä salasanalla**. Käytä osoitetta, johon pääset. Älä lähetä salasanaa tai mitään avainta ChatGPT-keskusteluun.
+2. **Tehty:** ensimmäinen pääkäyttäjätunnus ja työntekijätunnus on luotu Authiin. Älä luo samoja tunnuksia uudestaan.
 3. Luo myöhemmin ainakin toinen testitunnus eri osoitteelle työntekijäroolia varten; erillinen toinen hyväksyjä tarvitaan, jos työnjohto kirjaa myös toisten tunnit.
-4. Näille testitunnuksille tehdään jäsenyydet `public.memberships`-tauluun. Kerro keskustelussa **vain että tunnukset on luotu**; ChatGPT voi listata kirjautumistunnusten UUID:t Supabase-yhteydellä ja liittää roolit SQL:n kautta ilman että sinun tarvitsee käsitellä UUID:itä puhelimella.
+4. **Tehty:** jäsenyydet `public.memberships`-taulussa on luotu ja tarkistettu; roolit `admin` ja `employee`.
 5. Jos käytät kutsulinkkejä tai salasanan palautusta, määritä Supabase Dashboard → Authentication → URL Configuration → **Site URL / Redirect URLs** osoitteeseen `https://naatti21.github.io/Tuntiseuranta/`. Osoite on kirjainkokoriippuvainen.
 6. Testaa kirjautuminen ja kirjaaminen kahdessa eri selainprofiilissa tai puhelimessa. Tee testit vain tekaistuilla tiedoilla, kunnes testauslista sekä tietosuojan ja varmuuskopioinnin käytännöt on hyväksytty.
 
