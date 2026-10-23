@@ -1,4 +1,4 @@
-/* TyömaaTunnit 0.2A.4: yksi yritys, kirjautuminen ja Postgres/RLS.
+/* TyömaaTunnit 0.2A.5: yksi yritys, kirjautuminen ja Postgres/RLS.
  * Ei paikallista työaikatietojen tallennusta. Ei salaisia avaimia selaimessa.
  */
 'use strict';
@@ -16,11 +16,14 @@ let reportEntries = [];
 let reportPeriodLoaded = '';
 let reportLoading = false;
 let editId = null;
+let currentView = 'new';
 let loadSerial = 0;
 let busy = false;
 const statusText = {submitted:'Odottaa hyväksyntää', needs_changes:'Palautettu', approved:'Hyväksytty'};
 const isLead = () => ['supervisor','admin'].includes(myself?.role);
 const isAdmin = () => myself?.role === 'admin';
+// Pääkäyttäjän oman vanhan testileiman historia säilyy kannassa, mutta se ei kuulu työntekijöiden koontiin.
+const isWorkerEntry = e => !isAdmin() || (e.employee_id!==session?.user?.id && !members.some(m=>m.user_id===e.employee_id && m.role==='admin'));
 const hasConnection = () => navigator.onLine;
 
 function show(id) { ['setup','login','app'].forEach(x => $(x).classList.toggle('hidden', x !== id)); }
@@ -127,10 +130,12 @@ function fillSelect(select, options, placeholder='', selected='') {
   el.value = selected && options.some(o=>o.value===selected) ? selected : (placeholder?'':options[0]?.value||'');
 }
 function setView(name) {
+  if (isAdmin() && (name==='mine' || (name==='new' && !editId))) return;
   if ((name === 'lead' || name === 'report') && !isLead()) return;
   if (name === 'sites' && !isAdmin()) return;
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('hidden',v.id!==`view-${name}`));
   document.querySelectorAll('[data-view]').forEach(v=>v.classList.toggle('active',v.dataset.view===name));
+  currentView=name;
   if (name==='mine') renderMine();
   if (name==='lead') renderLead();
   if (name==='sites') renderSites();
@@ -143,6 +148,7 @@ function resetForm() {
   $('start').value='07:00';$('end').value='15:00';
   travelFields.forEach(id=>$(id).value='');
   $('travel-box').open=false;
+  $('entry-extras').open=false;
   $('unpaid-break-enabled').checked=false;
   $('break').value='0';
   syncUnpaidBreak();
@@ -150,12 +156,14 @@ function resetForm() {
   $('reason-field').classList.add('hidden');$('reason').required=false;
   $('submit-entry').textContent='Lähetä tunnit';
   // Poista vain korjaukseen tilapäisesti lisätty arkistoitu työmaa normaalilomakkeelta.
-  fillSelect('worksite',sites.filter(s=>s.active).map(s=>({value:s.id,label:s.name+(s.code?` (${s.code})`: '')})),'Valitse työmaa');
+  const activeSites=sites.filter(s=>s.active);
+  const lastWorksite=entries.find(e=>e.employee_id===session?.user?.id && activeSites.some(site=>site.id===e.worksite_id))?.worksite_id;
+  fillSelect('worksite',activeSites.map(s=>({value:s.id,label:s.name+(s.code?` (${s.code})`: '')})),'Valitse työmaa',lastWorksite||(activeSites.length===1?activeSites[0].id:''));
   if (members.length && isLead()) $('worker').value = session?.user?.id || '';
   calculate();
 }
 function resetState() {
-  session=null;myself=null;members=[];sites=[];entries=[];reportEntries=[];reportPeriodLoaded='';editId=null;loadSerial++;
+  session=null;myself=null;members=[];sites=[];entries=[];reportEntries=[];reportPeriodLoaded='';editId=null;currentView='new';loadSerial++;
   $('person').textContent='Tervetuloa';
   $('mine-list').replaceChildren();$('lead-list').replaceChildren();
 }
@@ -188,17 +196,19 @@ async function loadData() {
     $('role-label').textContent={employee:'Työntekijä',supervisor:'Työnjohtaja',admin:'Pääkäyttäjä'}[myself.role]||myself.role;
     document.querySelectorAll('.lead-only').forEach(el=>el.classList.toggle('hidden',!isLead()));
     document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin()));
+    document.querySelectorAll('.admin-hide').forEach(el=>el.classList.toggle('hidden',isAdmin()));
     fillSelect('worksite',sites.filter(s=>s.active).map(s=>({value:s.id,label:s.name+(s.code?` (${s.code})`: '')})),'Valitse työmaa');
     fillSelect('worker',members.map(m=>({value:m.user_id,label:m.display_name})),'Valitse työntekijä',session.user.id);
-    $('worker').required = isLead();
-    $('worker').disabled = !isLead();
-    fillSelect('filter-worker',members.map(m=>({value:m.user_id,label:m.display_name})),'Kaikki työntekijät');
+    $('worker').required = isLead() && !isAdmin();
+    $('worker').disabled = !isLead() || isAdmin();
+    fillSelect('filter-worker',members.filter(m=>!isAdmin()||m.role!=='admin').map(m=>({value:m.user_id,label:m.display_name})),'Kaikki työntekijät');
     const rWorker=$('report-worker').value;
     const rSite=$('report-site').value;
-    fillSelect('report-worker',members.map(m=>({value:m.user_id,label:m.display_name})),'Kaikki työntekijät',rWorker);
+    fillSelect('report-worker',members.filter(m=>!isAdmin()||m.role!=='admin').map(m=>({value:m.user_id,label:m.display_name})),'Kaikki työntekijät',rWorker);
     fillSelect('report-site',sites.map(s=>({value:s.id,label:s.name+(s.active?'':' (arkistoitu)')})),'Kaikki työmaat',rSite);
     if(!editId)resetForm();
     show('app');renderMine();renderLead();renderSites();
+    setView(isAdmin() && (currentView==='new'||currentView==='mine') && !editId ? 'lead' : currentView);
     if (!sites.some(s=>s.active)) feedback('Yhtään aktiivista työmaata ei ole. Pääkäyttäjän täytyy lisätä ensimmäinen työmaa.','err');
     else clearFeedback();
   } catch (err) {
@@ -241,7 +251,7 @@ function renderMine() {
 }
 function filteredLead() {
   const emp=$('filter-worker').value, status=$('filter-status').value;
-  return entries.filter(e=>(!emp||e.employee_id===emp)&&(!status||e.status===status));
+  return entries.filter(e=>isWorkerEntry(e)&&(!emp||e.employee_id===emp)&&(!status||e.status===status));
 }
 function renderLead() {
   if(!isLead())return;
@@ -306,6 +316,7 @@ function editEntry(id) {
   $('travel-back-end').value=localInputDateTime(e.travel_back_end);
   $('travel-box').open=Boolean(e.travel_out_start||e.travel_back_start);
   $('note').value=e.note||'';
+  $('entry-extras').open=Boolean(e.break_minutes||e.note);
   $('edit-tag').classList.remove('hidden');$('cancel-edit').classList.remove('hidden');
   $('reason-field').classList.remove('hidden');$('reason').required=true;$('reason').value='';
   $('submit-entry').textContent='Tallenna korjaus ja lähetä';
@@ -323,6 +334,7 @@ async function doBusy(operation) {
 async function submitEntry(event) {
   event.preventDefault();
   await doBusy(async()=>{
+    if(isAdmin()&&!editId)throw Error('Pääkäyttäjä ei kirjaa omia tuntejaan tässä näkymässä');
     const basic=fromForm();
     const values={...basic,...fromTravelForm(basic.p_start,basic.p_end)};
     if(!values.p_worksite_id)throw Error('Valitse työmaa');
@@ -331,7 +343,7 @@ async function submitEntry(event) {
       {p_employee_id:isLead()?$('worker').value:session.user.id,...values};
     if(editId && args.p_reason.length<3)throw Error('Kirjoita korjauksen perustelu');
     const {error}=await client.rpc(name,args);if(error)throw error;
-    resetForm();await loadData();setView('mine');
+    resetForm();await loadData();setView(isAdmin()?'lead':'mine');
     feedback('Kirjaus tallennettu yhteiseen tietokantaan.','ok');
   });
 }
@@ -398,6 +410,7 @@ async function loadReport() {
       if(page===maxPages-1)throw Error('Raportissa on yli 25 000 kirjausta. Rajaa aikaväliä, jotta kaikki rivit tulevat mukaan.');
     }
     reportEntries=all.filter(e=>{
+      if(!isWorkerEntry(e))return false;
       const d=helsinkiYmd(e.start_at);
       return d>=range.start && d<=range.end;
     });
@@ -408,6 +421,7 @@ async function loadReport() {
     $('report-notice').textContent='Raportin lataus epäonnistui.';
     $('report-groups').replaceChildren();
     $('report-detail').replaceChildren();
+    $('report-cards').replaceChildren();
     feedback('Raportin haku epäonnistui: '+errorText(err),'err');
   } finally {
     reportLoading=false;
@@ -455,6 +469,11 @@ function renderReport() {
     '<div><strong>'+esc(formatHour(total))+'</strong><span>Kaikki tunnit</span></div>'+
     '<div><strong>'+esc(formatHour(approved))+'</strong><span>Hyväksytyt tunnit</span></div>'+
     '<div><strong>'+esc(formatHour(travel))+'</strong><span>Matka-aika erikseen</span></div>';
+  $('report-cards').innerHTML=groups.length?groups.map(g=>
+    `<article class="report-person"><div class="report-person-head"><div><strong>${esc(employeeName(g.employee))}</strong><span>${esc(siteName(g.site))}</span></div><span class="report-count">${g.entries} kirjausta</span></div>`+
+    `<div class="report-person-metrics"><div><small>Työaika</small><strong>${esc(formatHour(g.total))}</strong></div><div><small>Matka-aika</small><strong>${esc(formatHour(g.travelOut+g.travelBack))}</strong></div></div>`+
+    `<div class="report-person-foot"><span>Hyväksytty ${esc(formatHour(g.approved))}</span><span>Käsiteltävä ${esc(formatHour(g.submitted+g.returned))}</span></div></article>`
+  ).join(''):'<p class="muted">Ei kirjauksia valitulla rajauksella.</p>';
   const header='<thead><tr><th>Työntekijä</th><th>Työmaa</th><th>Kirjauksia</th><th>Työaika</th><th>Hyväksytty</th><th>Käsiteltävä</th><th>Meno</th><th>Paluu</th><th>Matkat yhteensä</th></tr></thead>';
   $('report-groups').innerHTML=groups.length?header+'<tbody>'+groups.map(g=>
     '<tr><td>'+esc(employeeName(g.employee))+'</td><td>'+esc(siteName(g.site))+'</td>'+
@@ -534,7 +553,7 @@ function wire() {
   });
   document.querySelectorAll('[data-view]').forEach(el=>el.addEventListener('click',()=>setView(el.dataset.view)));
   $('entry-form').addEventListener('submit',submitEntry);
-  $('cancel-edit').addEventListener('click',resetForm);
+  $('cancel-edit').addEventListener('click',()=>{resetForm();if(isAdmin())setView('lead');});
   ['work-date','start','end','break',...travelFields].forEach(id=>$(id).addEventListener('input',calculate));
   $('unpaid-break-enabled').addEventListener('change',syncUnpaidBreak);
   $('mine-list').addEventListener('click',handleEntryButton);
@@ -553,6 +572,10 @@ function wire() {
     $('report-notice').textContent='Aikaväli muuttui. Paina Hae raportti.';
   }));
   $('report-file').addEventListener('click',exportReportCsv);
+  const reportDetails=['report-groups-toggle','report-detail-toggle'].map(id=>$(id));
+  if(window.matchMedia('(min-width:700px)').matches) $('report-groups-toggle').open=true;
+  window.addEventListener('beforeprint',()=>reportDetails.forEach(d=>{d.dataset.previousOpen=d.open?'true':'false';d.open=true;}));
+  window.addEventListener('afterprint',()=>reportDetails.forEach(d=>{if(d.dataset.previousOpen){d.open=d.dataset.previousOpen==='true';delete d.dataset.previousOpen;}}));
   $('report-pdf').addEventListener('click',()=>{if(isLead()&&reportPeriodLoaded)window.print();});
   $('refresh-mine').addEventListener('click',loadData);
   $('refresh-lead').addEventListener('click',loadData);
