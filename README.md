@@ -92,3 +92,7 @@ Päivityksissä toimitetaan käyttäjälle **vain muuttuneet tiedostot** sekä n
 - Kummankaan toiminnon ei pidä poistaa tuntikirjauksia, muutoslokia tai raporttihistoriaa.
 - Tietokanta estää uudet kirjaukset arkistoidulle työmaalle; palautetun kirjauksen korjaus alkuperäiseen kohteeseen pysyy sallittuna.
 - CSV-vientiä tai palkanlaskijan yhteenvetoa ei muutettu: muotoilu päätetään yhdessä yrityksen kanssa.
+
+## v0.2A.2 – raporttinäkymä
+
+Työnjohto ja pääkäyttäjä saavat **Raportit**-välilehden. Oletuksena kuluva kuukausi, mutta aikarajaus on vapaasti muutettavissa enintään 366 päivään. Suodattimet: työntekijä, työmaa (myös arkistoidut), hyväksyntätila. Yhteenvetotaulukossa tunnit työntekijä–työmaa-pareittain sekä erikseen hyväksytyt ja käsiteltävät tunnit. Päiväkohtainen taulukko ja väliaikainen yhteenveto-CSV ovat mukana. Raporttikysely hakee jakson rivit sivutettuna, ei rajoitu vanhan Työnjohto-näkymän 1000 viimeiseen. Raportin päivärajat tulkitaan Suomen ajassa. Näkymä ei vielä käsittele päivärahoja, kilometrejä eikä matka-aikaa. Nämä määritellään erikseen palkanlaskennan tarkennusten jälkeen. Supabaseen ei tehdä muutoksia raportointia varten.
