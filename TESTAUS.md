@@ -73,3 +73,20 @@ V0.2A on käytännön kokeilu, **ei työaikakirjanpidon tai tietosuojan vaatimus
 - [ ] Mobiilikoe: päivärajojen, yömatkan ja aikavyöhykkeen oikeellisuus.
 - [ ] Mobiilikoe: yhteenveto-CSV ja selaimen PDF-tulostus toimivat.
 - [ ] Palkanlaskijan hyväksyntä lopulliselle PDF-asettelulle, matkustusajan luokitukselle ja korvauksille.
+
+## v0.2A.5 – kevennetty työntekijä- ja pääkäyttäjän käyttöliittymä (23.10.2026)
+
+- [x] Pääkäyttäjän normaalista navigaatiosta piilotettu Kirjaa ja Omat tunnit; ensisijainen näkymä on Hyväksynnät.
+- [x] Pääkäyttäjän aiempi oma testileima säilyy tietokannassa ja audit-historiassa, mutta ei sisälly työntekijöiden koontiin, raporttinäkymään tai viennin suodatukseen.
+- [x] Työntekijän nopeassa kirjauksessa viimeksi käytetty aktiivinen työmaa esivalitaan; jos työmaita on vain yksi, se esivalitaan. Tarkistettava ennen lähetystä.
+- [x] Palkattoman tauon valinta ja lisätiedot siirretty avattavaan osioon. Historiallisten kirjauksien tauot/huomautukset avaavat osion automaattisesti korjauksessa.
+- [x] Matka-ajan avattava osio säilyy ennallaan.
+- [x] Raporttien mobiilikortit käyttävät samaa laskentaa kuin CSV-taulukko; simuloidussa testissä 480 + 450 = 930 minuuttia työaikaa ja 120 minuuttia matkaa.
+- [x] Päivittäisen raporttitaulukon HTML-merkintä korjattu, PDF-tulostus avaa taulukko-osiot ennen tulostusta.
+- [x] JavaScriptin syntaksitarkistus, DOM-tunnisteet ja julkaistut GitHub-tiedostot tarkistettu. Service workerin välimuisti nostettu versioon v02a-6.
+- [ ] Oikea puhelintesti sekä työntekijänä että pääkäyttäjänä: navigointi, viimeisen työmaan esivalinta, tauot, matkat ja muokkaus.
+- [ ] Mobiilikoe: raporttikortit, vaakavieritystaulukot ja PDF-tulostus.
+- [ ] Oikean palkanlaskijan arvio kuukausiraportin sisällöstä.
+- [ ] Hyväksymättä jäänyt pääkäyttäjän oma testileima tulee mitätöidä erikseen lokitettavalla toimenpiteellä, mikäli niin päätetään. Ei poistettu automaattisesti.
+
+**Tärkeää:** Tämä versio ei tee skeema- eikä RPC-muutoksia eikä muuta aikaisempia kirjauksia. Roolinäkymien piilottaminen ei ole tietokannan käyttöoikeusmuutos. Tuotantohyväksyntä vaatii yhä palautus-/varmistustestin ja oikean käyttökokeen.
