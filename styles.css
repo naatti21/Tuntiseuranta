@@ -6,3 +6,10 @@
 .report-table th,.report-table td{border-bottom:1px solid #e4edf4;padding:10px 12px;vertical-align:top;white-space:nowrap}
 .report-table th{background:#f0f5fa;color:#345672;font-size:12px}
 .report-table tr:last-child td{border-bottom:0}
+
+/* Valinnainen palkaton tauko: oletusarvo on pois päältä. */
+.break-box{padding:12px;border:1px solid #dce6ef;background:#f8fafc;border-radius:12px}
+.break-toggle{display:flex;align-items:center;gap:10px;min-height:30px;cursor:pointer}
+.break-toggle input[type="checkbox"]{width:20px;height:20px;min-height:20px;flex:none;padding:0;margin:0;accent-color:#155ab7}
+.break-box p.muted{margin:5px 0 0 30px}
+.break-box #break-field{margin-top:12px}
