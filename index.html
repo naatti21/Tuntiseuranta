@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="brand-icon">TT</span><div><strong>TyömaaTunnit</strong><small>Yrityspilotti • v0.2A.2</small></div></div>
+    <div class="brand"><span class="brand-icon">TT</span><div><strong>TyömaaTunnit</strong><small>Yrityspilotti • v0.2A.3</small></div></div>
     <button id="logout" class="btn ghost hidden" type="button">Kirjaudu ulos</button>
   </header>
   <main class="container">
@@ -54,8 +54,12 @@
           <label>Työmaa<select id="worksite" required></select></label>
           <label>Päivämäärä<input id="work-date" type="date" required/></label>
           <div class="two"><label>Alkaa<input id="start" type="time" value="07:00" required/></label><label>Päättyy<input id="end" type="time" value="15:00" required/></label></div>
-          <label>Palkaton tauko (min)<input id="break" type="number" min="0" max="1439" value="30" step="1" required/></label>
-          <div class="total"><span>Kirjattava työaika</span><strong id="net-time">7 h 30 min</strong></div>
+          <div class="break-box">
+            <label class="break-toggle" for="unpaid-break-enabled"><input id="unpaid-break-enabled" type="checkbox"/> Vähennä palkaton tauko</label>
+            <p class="muted tiny">Oletuksena ei vähennystä. Palkallinen ruokatauko sisältyy työaikaan.</p>
+            <label id="break-field" class="hidden">Vähennettävä palkaton tauko (min)<input id="break" type="number" min="1" max="1439" value="0" step="1" disabled/></label>
+          </div>
+          <div class="total"><span>Kirjattava työaika</span><strong id="net-time">8 h 00 min</strong></div>
           <label>Lisätiedot (valinnainen)<textarea id="note" rows="2" maxlength="500" placeholder="Esim. asennustyö, korjaus..."></textarea></label>
           <label id="reason-field" class="hidden">Korjauksen perustelu<textarea id="reason" rows="2" minlength="3" maxlength="500" placeholder="Miksi kirjausta korjataan?"></textarea></label>
           <div class="actions"><button type="submit" id="submit-entry" class="btn primary">Lähetä tunnit</button><button type="button" id="cancel-edit" class="btn ghost hidden">Peruuta korjaus</button></div>
@@ -117,7 +121,7 @@
         <p class="muted tiny">Älä käytä samaa salasanaa muissa palveluissa. Pääkäyttäjällä ei ole pääsyä käyttäjän salasanaan.</p>
       </section>
     </section>
-    <footer>TyömaaTunnit v0.2A.2 • Verkkoyhteys tarvitaan tallennukseen • Ei vielä hyväksytty viralliseen työaikakirjanpitoon</footer>
+    <footer>TyömaaTunnit v0.2A.3 • Verkkoyhteys tarvitaan tallennukseen • Ei vielä hyväksytty viralliseen työaikakirjanpitoon</footer>
   </main>
   <script src="./config.js"></script>
   <script type="module" src="./app.js"></script>
