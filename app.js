@@ -1,4 +1,4 @@
-/* TyömaaTunnit 0.2A.1: yksi yritys, kirjautuminen ja Postgres/RLS.
+/* TyömaaTunnit 0.2A.3: yksi yritys, kirjautuminen ja Postgres/RLS.
  * Ei paikallista työaikatietojen tallennusta. Ei salaisia avaimia selaimessa.
  */
 'use strict';
@@ -44,11 +44,20 @@ function fromForm() {
   const last = new Date(`${date}T${end}:00`);
   if (Number.isNaN(first.getTime()) || Number.isNaN(last.getTime())) throw Error('Virheelliset kellonajat');
   if (last <= first) last.setDate(last.getDate()+1);
-  const br = Number($('break').value);
+  const br = $('unpaid-break-enabled').checked ? Number($('break').value) : 0;
   const minutes = deltaMins(first.toISOString(),last.toISOString(),br);
   if (!Number.isInteger(br) || br<0 || br>1439 || minutes<=0 || deltaMins(first,last,0)>1440)
     throw Error('Tarkista kellonajat ja tauko (vuoro saa kestää enintään 24 tuntia)');
   return {p_worksite_id:$('worksite').value,p_start:first.toISOString(),p_end:last.toISOString(),p_break:br,p_note:$('note').value.trim()};
+}
+function syncUnpaidBreak() {
+  const enabled=$('unpaid-break-enabled').checked;
+  $('break-field').classList.toggle('hidden',!enabled);
+  $('break').disabled=!enabled;
+  $('break').required=enabled;
+  if(!enabled) $('break').value='0';
+  else if($('break').value==='0' || !$('break').value) $('break').value='30';
+  calculate();
 }
 function calculate() {
   try { const v = fromForm(); $('net-time').textContent = formatHour(deltaMins(v.p_start,v.p_end,v.p_break)); }
@@ -74,7 +83,10 @@ function resetForm() {
   editId = null;
   $('entry-form').reset();
   $('work-date').value = localYmd(new Date());
-  $('start').value='07:00';$('end').value='15:00';$('break').value='30';
+  $('start').value='07:00';$('end').value='15:00';
+  $('unpaid-break-enabled').checked=false;
+  $('break').value='0';
+  syncUnpaidBreak();
   $('edit-tag').classList.add('hidden'); $('cancel-edit').classList.add('hidden');
   $('reason-field').classList.add('hidden');$('reason').required=false;
   $('submit-entry').textContent='Lähetä tunnit';
@@ -146,7 +158,7 @@ function makeEntryCard(e,lead=false) {
     <div class="entry-top"><h3>${esc(siteName(e.worksite_id))}</h3><span class="status ${esc(e.status)}">${esc(label)}</span></div>
     ${lead?`<p class="muted">${esc(employeeName(e.employee_id))}</p>`:''}
     <div class="time">${esc(formatHour(min))}</div>
-    <p class="muted">${esc(humanDate(e.start_at))} • ${esc(local.time)}–${esc(end.time)} • tauko ${e.break_minutes} min</p>
+    <p class="muted">${esc(humanDate(e.start_at))} • ${esc(local.time)}–${esc(end.time)} • ${e.break_minutes>0?`palkaton taukovähennys ${e.break_minutes} min`:'ei palkatonta taukovähennystä'}</p>
     ${e.note?`<p>${esc(e.note)}</p>`:''}
     ${e.review_reason?`<p class="muted"><strong>Perustelu:</strong> ${esc(e.review_reason)}</p>`:''}
     <div class="actions">
@@ -223,7 +235,10 @@ function editEntry(id) {
   const start=localDateTime(e.start_at),end=localDateTime(e.end_at);
   $('work-date').value=start.date;
   $('start').value=start.time;$('end').value=end.time;
-  $('break').value=String(e.break_minutes);$('note').value=e.note||'';
+  $('unpaid-break-enabled').checked=e.break_minutes>0;
+  $('break').value=String(e.break_minutes);
+  syncUnpaidBreak();
+  $('note').value=e.note||'';
   $('edit-tag').classList.remove('hidden');$('cancel-edit').classList.remove('hidden');
   $('reason-field').classList.remove('hidden');$('reason').required=true;$('reason').value='';
   $('submit-entry').textContent='Tallenna korjaus ja lähetä';
@@ -440,6 +455,7 @@ function wire() {
   $('entry-form').addEventListener('submit',submitEntry);
   $('cancel-edit').addEventListener('click',resetForm);
   ['work-date','start','end','break'].forEach(id=>$(id).addEventListener('input',calculate));
+  $('unpaid-break-enabled').addEventListener('change',syncUnpaidBreak);
   $('mine-list').addEventListener('click',handleEntryButton);
   $('lead-list').addEventListener('click',handleEntryButton);
   $('filter-worker').addEventListener('change',renderLead);
