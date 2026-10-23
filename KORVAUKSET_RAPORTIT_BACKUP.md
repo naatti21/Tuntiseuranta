@@ -15,7 +15,7 @@ Päivitetty 23.10.2026. Tämä dokumentti erottaa **tehdyt toteutukset**, **käy
 
 1. **Päivärahat (päätetty työnkulku):** työntekijä voi kirjata itse korvausvaatimuksen, ja työnjohto saa tarvittaessa muokata sekä hyväksyä sen. Ehdotettu tieto on tyyppi (ei / osapäivä / kokopäivä; ulkomaanmatkat ja ateriakorvaus erikseen tarpeen mukaan), määrä, peruste, matkan kesto, kohde ja tarvittaessa maksuttomat ateriat. Muutoksista jää tekijän, ajan, ennen/jälkeen-arvojen ja syyn sisältävä loki. **Ei automaattista verovapauden eikä euromäärän päätelmää.**
 2. **Kilometrit:** matkakilometrit, ajoneuvotyyppi, tarkoitus / matkan reitti, työmaa, korvattavat kilometrit ja hyväksyntä. Erota omalla autolla tehdyt työkilometrit tavallisesta työmatkasta.
-3. **Matka-aika:** kirjataan minuutteina tai alku–loppu, mutta **ei lasketa automaattisesti tehtyihin työtunteihin**. Palkallisuus/työaikaluokitus ratkaistaan työnantajan käytännön ja sovellettavan TES:n mukaisesti.
+3. **Matka-aika (23.10.2026 vahvistettu):** kirjataan lähtö- ja saapumiskellonaikoina, joiden välinen kesto lasketaan automaattisesti. Tarvittaessa meno- ja paluumatka erillisinä jaksoina, jotta työssäolotunnit eivät tule matkustusajaksi. Matka-aika näytetään raportissa erillään työtunneista. Palkallisuus/työaikaluokitus ratkaistaan yrityksen käytännön ja sovellettavan TES:n mukaan. Ei vielä toteutettu tietokantaan tai lomakkeeseen.
 4. **Duplikaattien välttäminen:** sama työntekijä voi tehdä päivän aikana kirjauksia usealle työmaalle. Päivärahaa ei siksi saa kerryttää joka tuntikirjaukselta suoraan; suunnitellaan erillinen matkalasku-/korvausrivi, joka voidaan kohdistaa päivään ja tarvittaessa työmaahan.
 5. **Hyväksyntä, korjaukset ja loki:** korvauksille samantasoinen jäljitettävyys ja oikeustarkistus kuin työtunneille.
 
@@ -74,3 +74,9 @@ Tausta: https://vero.fi/henkiloasiakkaat/vahennykset/kilometrikorvaus-ja-paivara
 - Supabase varmuuskopiot: https://supabase.com/docs/guides/platform/backups
 - Supabase tuotantotarkistuslista: https://supabase.com/docs/guides/deployment/going-into-prod
 - EU GDPR, artikla 28: https://eur-lex.europa.eu/eli/reg/2016/679/oj
+
+## v0.2A.3 – ruokataukokäytäntö 23.10.2026
+
+**Päätetty:** käyttäjän pilottiyrityksessä ruokatauko on palkallinen, joten oletuksena työajasta ei vähennetä taukoa. Kirjauslomakkeessa on valinnainen **Vähennä palkaton tauko** -kytkin, joka on aluksi pois päältä. Kun kytkin otetaan käyttöön, vähennettävät minuutit voidaan asettaa. Taustalla säilyy alkuperäinen `break_minutes`-kenttä; uusi normaali kirjaus tallentaa `0`, ellei vähennys ole päällä. Vanhat kirjaukset **eivät muutu automaattisesti**, vaan aiemmat vähennykset jäävät talteen. Myyntituotteessa käytäntö on tehtävä yrityskohtaisesti määriteltäväksi.
+
+**Matka-aika:** hyväksytty kellonaikaväli ja automaattinen keston laskenta. Toteutus myöhemmin, turvallisena erillisenä tietona; ei automaattisesti palkallista työaikaa.
