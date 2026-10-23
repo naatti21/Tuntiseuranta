@@ -36,3 +36,15 @@ V0.2A on käytännön kokeilu, **ei työaikakirjanpidon tai tietosuojan vaatimus
 ## Tietoturvan avoin asetus
 
 - [ ] Supabase Auth: **Leaked Password Protection** on poissa käytöstä (Security Advisor, 22.10.2026). Ota se käyttöön ennen oikeiden henkilötietojen ja työaikakirjausten käsittelyä: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+
+## v0.2A.2 – raportointi (selaintesti vielä tekemättä)
+
+- [x] JavaScriptin syntaksitarkistus, raportin DOM-tunnisteiden eheys ja GitHubissa julkaistun tiedostoversion tarkistus.
+- [x] Supabase-tuntikirjausten määrä sama päivityksen jälkeen (3 aiempaa testimerkintää).
+- [ ] Pääkäyttäjän ja työnjohdon Raportit-välilehti näkyy ja aukeaa, työntekijälle ei näy.
+- [ ] Alku- ja loppupäivä oletuksena kuluva kalenterikuukausi.
+- [ ] Työntekijä-, työmaa- ja hyväksyntäsuodatus muuttavat näytetyt summat oikein.
+- [ ] Arkistoitu työmaa on edelleen raporttien suodattimessa.
+- [ ] Hyväksytyt ja käsiteltävät työtunnit eivät sekoitu.
+- [ ] CSV aukeaa mobiilissa ja Excelissä oikeina sarakkeina.
+- [ ] Palkanlaskija hyväksyy lopullisen kenttä- ja tiedostomuodon ennen tuotantokäyttöä.
