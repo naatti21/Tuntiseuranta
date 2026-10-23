@@ -12,6 +12,9 @@ let myself = null;
 let members = [];
 let sites = [];
 let entries = [];
+let reportEntries = [];
+let reportPeriodLoaded = '';
+let reportLoading = false;
 let editId = null;
 let loadSerial = 0;
 let busy = false;
@@ -58,13 +61,14 @@ function fillSelect(select, options, placeholder='', selected='') {
   el.value = selected && options.some(o=>o.value===selected) ? selected : (placeholder?'':options[0]?.value||'');
 }
 function setView(name) {
-  if (name === 'lead' && !isLead()) return;
+  if ((name === 'lead' || name === 'report') && !isLead()) return;
   if (name === 'sites' && !isAdmin()) return;
   document.querySelectorAll('.view').forEach(v=>v.classList.toggle('hidden',v.id!==`view-${name}`));
   document.querySelectorAll('[data-view]').forEach(v=>v.classList.toggle('active',v.dataset.view===name));
   if (name==='mine') renderMine();
   if (name==='lead') renderLead();
   if (name==='sites') renderSites();
+  if (name==='report') { if (!reportPeriodLoaded) loadReport(); else renderReport(); }
 }
 function resetForm() {
   editId = null;
@@ -80,7 +84,7 @@ function resetForm() {
   calculate();
 }
 function resetState() {
-  session=null;myself=null;members=[];sites=[];entries=[];editId=null;loadSerial++;
+  session=null;myself=null;members=[];sites=[];entries=[];reportEntries=[];reportPeriodLoaded='';editId=null;loadSerial++;
   $('person').textContent='Tervetuloa';
   $('mine-list').replaceChildren();$('lead-list').replaceChildren();
 }
@@ -118,6 +122,10 @@ async function loadData() {
     $('worker').required = isLead();
     $('worker').disabled = !isLead();
     fillSelect('filter-worker',members.map(m=>({value:m.user_id,label:m.display_name})),'Kaikki työntekijät');
+    const rWorker=$('report-worker').value;
+    const rSite=$('report-site').value;
+    fillSelect('report-worker',members.map(m=>({value:m.user_id,label:m.display_name})),'Kaikki työntekijät',rWorker);
+    fillSelect('report-site',sites.map(s=>({value:s.id,label:s.name+(s.active?'':' (arkistoitu)')})),'Kaikki työmaat',rSite);
     if(!editId)resetForm();
     show('app');renderMine();renderLead();renderSites();
     if (!sites.some(s=>s.active)) feedback('Yhtään aktiivista työmaata ei ole. Pääkäyttäjän täytyy lisätä ensimmäinen työmaa.','err');
@@ -262,6 +270,139 @@ async function handleEntryButton(event) {
     await loadData();setView('lead');feedback(decision==='approved'?'Kirjaus hyväksytty.':'Kirjaus palautettu korjattavaksi.','ok');
   });
 }
+
+function helsinkiYmd(utc) {
+  return new Intl.DateTimeFormat('sv-SE',{
+    timeZone:'Europe/Helsinki',year:'numeric',month:'2-digit',day:'2-digit'
+  }).format(new Date(utc));
+}
+function reportRange() {
+  const start=$('report-start').value, end=$('report-end').value;
+  if (!start || !end || start>end) throw Error('Valitse kelvollinen alkamis- ja päättymispäivä');
+  const startUtc=Date.parse(start+'T00:00:00Z');
+  const endUtc=Date.parse(end+'T00:00:00Z');
+  if (endUtc-startUtc>366*86400000) throw Error('Valitse enintään 366 päivän jakso');
+  return {start,end,from:new Date(startUtc-86400000).toISOString(),until:new Date(endUtc+2*86400000).toISOString()};
+}
+function setCurrentMonth() {
+  const now=new Date(), year=now.getFullYear(), month=now.getMonth();
+  $('report-start').value=localYmd(new Date(year,month,1));
+  $('report-end').value=localYmd(new Date(year,month+1,0));
+  reportPeriodLoaded='';
+}
+async function loadReport() {
+  if(!isLead() || reportLoading || !client) return;
+  let range;
+  try {range=reportRange();}
+  catch(err) {feedback(errorText(err),'err');return;}
+  reportLoading=true;
+  $('report-load').disabled=true;
+  $('report-file').disabled=true;
+  $('report-notice').textContent='Ladataan kirjauksia valitulta ajalta…';
+  try {
+    const all=[];
+    const pageSize=500, maxPages=50;
+    for(let page=0;page<maxPages;page++) {
+      const {data,error}=await client.from('time_entries')
+        .select('id,employee_id,worksite_id,start_at,end_at,break_minutes,status,note')
+        .gte('start_at',range.from).lt('start_at',range.until)
+        .order('start_at',{ascending:true}).order('id',{ascending:true})
+        .range(page*pageSize,(page+1)*pageSize-1);
+      if(error)throw error;
+      all.push(...(data||[]));
+      if((data||[]).length<pageSize)break;
+      if(page===maxPages-1)throw Error('Raportissa on yli 25 000 kirjausta. Rajaa aikaväliä, jotta kaikki rivit tulevat mukaan.');
+    }
+    reportEntries=all.filter(e=>{
+      const d=helsinkiYmd(e.start_at);
+      return d>=range.start && d<=range.end;
+    });
+    reportPeriodLoaded=range.start+' – '+range.end;
+    renderReport();
+  } catch(err) {
+    reportPeriodLoaded='';
+    $('report-notice').textContent='Raportin lataus epäonnistui.';
+    $('report-groups').replaceChildren();
+    $('report-detail').replaceChildren();
+    feedback('Raportin haku epäonnistui: '+errorText(err),'err');
+  } finally {
+    reportLoading=false;
+    $('report-load').disabled=false;
+    $('report-file').disabled=!reportPeriodLoaded;
+  }
+}
+function filteredReport() {
+  if(!reportPeriodLoaded)return [];
+  const employee=$('report-worker').value, worksite=$('report-site').value,
+    status=$('report-status').value;
+  return reportEntries.filter(e=>(!employee||e.employee_id===employee)
+    && (!worksite||e.worksite_id===worksite)&&(!status||e.status===status));
+}
+function reportGroups(rows) {
+  const map=new Map();
+  for(const e of rows) {
+    const key=e.employee_id+'|'+e.worksite_id;
+    if(!map.has(key))map.set(key,{
+      employee:e.employee_id,site:e.worksite_id,entries:0,total:0,approved:0,submitted:0,returned:0
+    });
+    const r=map.get(key),minutes=deltaMins(e.start_at,e.end_at,e.break_minutes);
+    r.entries++;r.total+=minutes;
+    if(e.status==='approved')r.approved+=minutes;
+    if(e.status==='submitted')r.submitted+=minutes;
+    if(e.status==='needs_changes')r.returned+=minutes;
+  }
+  return [...map.values()].sort((a,b)=>
+    employeeName(a.employee).localeCompare(employeeName(b.employee),'fi')||
+    siteName(a.site).localeCompare(siteName(b.site),'fi'));
+}
+function renderReport() {
+  if(!isLead()||!reportPeriodLoaded)return;
+  const rows=filteredReport(),groups=reportGroups(rows);
+  const total=rows.reduce((n,e)=>n+deltaMins(e.start_at,e.end_at,e.break_minutes),0);
+  const approved=rows.filter(e=>e.status==='approved')
+    .reduce((n,e)=>n+deltaMins(e.start_at,e.end_at,e.break_minutes),0);
+  $('report-notice').textContent='Jakso '+reportPeriodLoaded+
+    ' • '+rows.length+' kirjausta • tunnit eivät sisällä matkustusaikaa tai kulukorvauksia.';
+  $('report-summary').innerHTML=
+    '<div><strong>'+rows.length+'</strong><span>Kirjauksia</span></div>'+
+    '<div><strong>'+esc(formatHour(total))+'</strong><span>Kaikki tunnit</span></div>'+
+    '<div><strong>'+esc(formatHour(approved))+'</strong><span>Hyväksytyt tunnit</span></div>';
+  const header='<thead><tr><th>Työntekijä</th><th>Työmaa</th><th>Kirjauksia</th><th>Tunnit</th><th>Hyväksytty</th><th>Käsiteltävä</th></tr></thead>';
+  $('report-groups').innerHTML=groups.length?header+'<tbody>'+groups.map(g=>
+    '<tr><td>'+esc(employeeName(g.employee))+'</td><td>'+esc(siteName(g.site))+'</td>'+
+    '<td>'+g.entries+'</td><td>'+esc(formatHour(g.total))+'</td>'+
+    '<td>'+esc(formatHour(g.approved))+'</td><td>'+esc(formatHour(g.submitted+g.returned))+'</td></tr>'
+  ).join('')+'</tbody>':'<tbody><tr><td>Ei kirjauksia valitulla rajauksella.</td></tr></tbody>';
+  $('report-detail').innerHTML=rows.length?
+    '<thead><tr><th>Päivä</th><th>Työntekijä</th><th>Työmaa</th><th>Tunnit</th><th>Tila</th></tr></thead><tbody>'+
+    rows.map(e=>'<tr><td>'+esc(helsinkiYmd(e.start_at))+'</td><td>'+
+      esc(employeeName(e.employee_id))+'</td><td>'+esc(siteName(e.worksite_id))+'</td>'+
+      esc(formatHour(deltaMins(e.start_at,e.end_at,e.break_minutes)))+
+      '</td><td>'+esc(statusText[e.status]||e.status)+'</td></tr>').join('')+'</tbody>':'';
+}
+function exportReportCsv() {
+  if(!isLead()||!reportPeriodLoaded)return;
+  const groups=reportGroups(filteredReport());
+  const lines=[
+    ['Tuntiseuranta – työmaayhteenveto'],
+    ['Alku', $('report-start').value,'Loppu',$('report-end').value],
+    ['Työntekijä','Työmaa','Kirjauksia','Tunnit yhteensä','Hyväksytyt tunnit','Käsiteltävät tunnit'],
+    ...groups.map(g=>[
+      employeeName(g.employee),siteName(g.site),g.entries,
+      (g.total/60).toFixed(2).replace('.',','),
+      (g.approved/60).toFixed(2).replace('.',','),
+      ((g.submitted+g.returned)/60).toFixed(2).replace('.',',')
+    ])
+  ].map(columns=>columns.map(csvField).join(';')).join('\r\n');
+  const url=URL.createObjectURL(new Blob(['\ufeff',lines],{type:'text/csv;charset=utf-8;'}));
+  const link=document.createElement('a');
+  link.href=url;
+  link.download='tuntiseuranta-yhteenveto-'+$('report-start').value+'_'+$('report-end').value+'.csv';
+  document.body.append(link);link.click();link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),2000);
+  feedback('Raportin '+groups.length+' työntekijä–työmaa-yhteenvetoriviä viety tiedostoon.');
+}
+
 function csvField(raw) {
   let text=String(raw??'');
   if(/^[\s]*[=+@-]/.test(text))text=`'${text}`; // estä Excel-kaavainjektio
@@ -304,6 +445,16 @@ function wire() {
   $('filter-worker').addEventListener('change',renderLead);
   $('filter-status').addEventListener('change',renderLead);
   $('csv-export').addEventListener('click',exportCsv);
+  setCurrentMonth();
+  $('report-load').addEventListener('click',loadReport);
+  $('report-current-month').addEventListener('click',()=>{setCurrentMonth();loadReport();});
+  ['report-worker','report-site','report-status'].forEach(id=>$(id).addEventListener('change',renderReport));
+  ['report-start','report-end'].forEach(id=>$(id).addEventListener('change',()=>{
+    reportPeriodLoaded='';
+    $('report-file').disabled=true;
+    $('report-notice').textContent='Aikaväli muuttui. Paina Hae raportti.';
+  }));
+  $('report-file').addEventListener('click',exportReportCsv);
   $('refresh-mine').addEventListener('click',loadData);
   $('refresh-lead').addEventListener('click',loadData);
   $('sites-list').addEventListener('click',handleSiteAction);
