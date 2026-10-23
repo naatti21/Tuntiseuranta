@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="brand-icon">TT</span><div><strong>TyömaaTunnit</strong><small>Yrityspilotti • v0.2A.3</small></div></div>
+    <div class="brand"><span class="brand-icon">TT</span><div><strong>TyömaaTunnit</strong><small>Yrityspilotti • v0.2A.4</small></div></div>
     <button id="logout" class="btn ghost hidden" type="button">Kirjaudu ulos</button>
   </header>
   <main class="container">
@@ -60,6 +60,23 @@
             <label id="break-field" class="hidden">Vähennettävä palkaton tauko (min)<input id="break" type="number" min="1" max="1439" value="0" step="1" disabled/></label>
           </div>
           <div class="total"><span>Kirjattava työaika</span><strong id="net-time">8 h 00 min</strong></div>
+          <details class="travel-box" id="travel-box">
+            <summary>Matka-ajat (valinnainen)</summary>
+            <p class="muted tiny">Kirjaa lähtö- ja saapumisaika. Kesto lasketaan automaattisesti. Matka-aika ei sisälly työtunteihin. Päivän vaihtuminen onnistuu valitsemalla oikea päivämäärä.</p>
+            <h3>Menomatka</h3>
+            <div class="two">
+              <label>Lähtö<input id="travel-out-start" type="datetime-local"/></label>
+              <label>Saapuminen<input id="travel-out-end" type="datetime-local"/></label>
+            </div>
+            <p class="travel-calc">Menomatkan kesto: <strong id="travel-out-duration">—</strong></p>
+            <h3>Paluumatka</h3>
+            <div class="two">
+              <label>Lähtö<input id="travel-back-start" type="datetime-local"/></label>
+              <label>Saapuminen<input id="travel-back-end" type="datetime-local"/></label>
+            </div>
+            <p class="travel-calc">Paluumatkan kesto: <strong id="travel-back-duration">—</strong></p>
+            <div class="total"><span>Matka-aika yhteensä (erillään työajasta)</span><strong id="travel-total">0 h 00 min</strong></div>
+          </details>
           <label>Lisätiedot (valinnainen)<textarea id="note" rows="2" maxlength="500" placeholder="Esim. asennustyö, korjaus..."></textarea></label>
           <label id="reason-field" class="hidden">Korjauksen perustelu<textarea id="reason" rows="2" minlength="3" maxlength="500" placeholder="Miksi kirjausta korjataan?"></textarea></label>
           <div class="actions"><button type="submit" id="submit-entry" class="btn primary">Lähetä tunnit</button><button type="button" id="cancel-edit" class="btn ghost hidden">Peruuta korjaus</button></div>
@@ -78,7 +95,7 @@
       <section id="view-report" class="view card hidden">
         <p class="eyebrow">Työnjohdon raportointi</p><h2>Työmaa- ja työntekijäyhteenveto</h2>
         <p class="muted">Oletuksena kuluva kuukausi. Voit rajata minkä tahansa ajanjakson (enintään vuoden) ja näyttää arkistoidutkin työmaat.</p>
-        <div class="two">
+        <div class="report-controls"><div class="two">
           <label>Alkaen<input id="report-start" type="date" required></label>
           <label>Päättyen<input id="report-end" type="date" required></label>
         </div>
@@ -96,12 +113,14 @@
           <option value="submitted">Odottaa hyväksyntää</option>
           <option value="needs_changes">Palautettu korjattavaksi</option>
         </select></label>
+        </div>
         <p id="report-notice" class="muted tiny" role="status">Valitse Hae raportti.</p>
         <div id="report-summary" class="summary"></div>
         <h3>Yhteenveto työntekijöittäin ja työmaittain</h3>
         <div class="table-scroll"><table class="report-table" id="report-groups"></table></div>
         <div class="actions report-toolbar">
           <button id="report-file" class="btn secondary" type="button" disabled>Vie yhteenveto CSV</button>
+          <button id="report-pdf" class="btn secondary" type="button" disabled>Tulosta / Tallenna PDF</button>
         </div>
         <p class="muted tiny">Raportti erottaa hyväksytyt ja vielä käsiteltävät tunnit. CSV on väliaikainen tiedostomuoto; lopullinen palkanlaskentapohja sovitaan yrityksen kanssa.</p>
         <h3>Päiväkohtaiset merkinnät</h3>
@@ -121,7 +140,7 @@
         <p class="muted tiny">Älä käytä samaa salasanaa muissa palveluissa. Pääkäyttäjällä ei ole pääsyä käyttäjän salasanaan.</p>
       </section>
     </section>
-    <footer>TyömaaTunnit v0.2A.3 • Verkkoyhteys tarvitaan tallennukseen • Ei vielä hyväksytty viralliseen työaikakirjanpitoon</footer>
+    <footer>TyömaaTunnit v0.2A.4 • Verkkoyhteys tarvitaan tallennukseen • Ei vielä hyväksytty viralliseen työaikakirjanpitoon</footer>
   </main>
   <script src="./config.js"></script>
   <script type="module" src="./app.js"></script>
