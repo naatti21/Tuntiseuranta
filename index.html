@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="brand-icon">TT</span><div><strong>TyömaaTunnit</strong><small>Yrityspilotti • v0.2A.1</small></div></div>
+    <div class="brand"><span class="brand-icon">TT</span><div><strong>TyömaaTunnit</strong><small>Yrityspilotti • v0.2A.2</small></div></div>
     <button id="logout" class="btn ghost hidden" type="button">Kirjaudu ulos</button>
   </header>
   <main class="container">
@@ -42,6 +42,7 @@
         <button type="button" data-view="new" class="tab active">Kirjaa</button>
         <button type="button" data-view="mine" class="tab">Omat tunnit</button>
         <button type="button" data-view="lead" class="tab lead-only hidden">Työnjohto</button>
+        <button type="button" data-view="report" class="tab lead-only hidden">Raportit</button>
         <button type="button" data-view="sites" class="tab admin-only hidden">Työmaat</button>
         <button type="button" data-view="account" class="tab">Tili</button>
       </nav>
@@ -70,6 +71,38 @@
         <div class="actions"><button id="csv-export" class="btn secondary" type="button">Vie näkyvät CSV</button></div>
         <div id="lead-summary" class="summary"></div><div id="lead-list" class="entries"></div>
       </section>
+      <section id="view-report" class="view card hidden">
+        <p class="eyebrow">Työnjohdon raportointi</p><h2>Työmaa- ja työntekijäyhteenveto</h2>
+        <p class="muted">Oletuksena kuluva kuukausi. Voit rajata minkä tahansa ajanjakson (enintään vuoden) ja näyttää arkistoidutkin työmaat.</p>
+        <div class="two">
+          <label>Alkaen<input id="report-start" type="date" required></label>
+          <label>Päättyen<input id="report-end" type="date" required></label>
+        </div>
+        <div class="actions report-toolbar">
+          <button id="report-current-month" class="btn ghost" type="button">Kuluva kk</button>
+          <button id="report-load" class="btn primary" type="button">Hae raportti</button>
+        </div>
+        <div class="two report-filter">
+          <label>Työntekijä<select id="report-worker"><option value="">Kaikki työntekijät</option></select></label>
+          <label>Työmaa<select id="report-site"><option value="">Kaikki työmaat</option></select></label>
+        </div>
+        <label>Hyväksyntätila<select id="report-status">
+          <option value="">Kaikki tilat</option>
+          <option value="approved">Hyväksytty</option>
+          <option value="submitted">Odottaa hyväksyntää</option>
+          <option value="needs_changes">Palautettu korjattavaksi</option>
+        </select></label>
+        <p id="report-notice" class="muted tiny" role="status">Valitse Hae raportti.</p>
+        <div id="report-summary" class="summary"></div>
+        <h3>Yhteenveto työntekijöittäin ja työmaittain</h3>
+        <div class="table-scroll"><table class="report-table" id="report-groups"></table></div>
+        <div class="actions report-toolbar">
+          <button id="report-file" class="btn secondary" type="button" disabled>Vie yhteenveto CSV</button>
+        </div>
+        <p class="muted tiny">Raportti erottaa hyväksytyt ja vielä käsiteltävät tunnit. CSV on väliaikainen tiedostomuoto; lopullinen palkanlaskentapohja sovitaan yrityksen kanssa.</p>
+        <h3>Päiväkohtaiset merkinnät</h3>
+        <div class="table-scroll"><table class="report-table" id="report-detail"></table></div>
+      </section>
       <section id="view-sites" class="view card hidden">
         <p class="eyebrow">Pääkäyttäjä</p><h2>Lisää työmaa</h2>
         <form id="site-form" class="stack"><label>Työmaan nimi<input id="site-name" maxlength="120" minlength="2" required placeholder="Esim. Keskustan saneeraus"/></label><label>Koodi (valinnainen)<input id="site-code" maxlength="32" placeholder="TM-101"/></label><button class="btn primary" type="submit">Lisää työmaa</button></form>
@@ -84,7 +117,7 @@
         <p class="muted tiny">Älä käytä samaa salasanaa muissa palveluissa. Pääkäyttäjällä ei ole pääsyä käyttäjän salasanaan.</p>
       </section>
     </section>
-    <footer>TyömaaTunnit v0.2A.1 • Verkkoyhteys tarvitaan tallennukseen • Ei vielä hyväksytty viralliseen työaikakirjanpitoon</footer>
+    <footer>TyömaaTunnit v0.2A.2 • Verkkoyhteys tarvitaan tallennukseen • Ei vielä hyväksytty viralliseen työaikakirjanpitoon</footer>
   </main>
   <script src="./config.js"></script>
   <script type="module" src="./app.js"></script>
