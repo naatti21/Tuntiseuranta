@@ -58,3 +58,18 @@ V0.2A on käytännön kokeilu, **ei työaikakirjanpidon tai tietosuojan vaatimus
 - [ ] Mobiilissa 07–15 = 7 h 30 min, kun vähennettävä palkaton tauko on 30 min.
 - [ ] Aiemmat 30 minuutin vähennykset eivät muutu eikä niitä muuteta takautuvasti automaattisesti.
 - [ ] Kirjauksen korjauksessa kytkin näkyy vanhojen arvojen mukaan.
+
+## v0.2A.4 – Matka-ajan tallennus ja raportointi
+
+- [x] Supabase-transaktiotesti: 1 h menomatka, 1 h 30 min paluumatka tallentuvat oikein, rollback.
+- [x] Tietokantatesti: työnjohto voi korjata matka-aikaa ja muutokset näkyvät audit-lokissa, rollback.
+- [x] Tietokantatesti: työntekijä ei voi muokata hyväksymätöntä lähetettyä tuntiriviä eikä kirjata toisen tunteja.
+- [x] Tietokanta estää työajan päälle menevät matka-ajat, osittaiset aikavälit ja matkojen keskinäisen päällekkäisyyden.
+- [x] JavaScriptin laskentatestit: tyhjä matka 0, meno 60 + paluu 90 = 150 minuuttia, puuttuva aika estetään, päällekkäisyys estetään, yömatka toimii.
+- [x] GitHub-tiedostojen JavaScript-syntaksi ja HTML-elementtien tunnisteet tarkistettu; 3 aiempaa kirjausta säilyi, matka-ajat NULL.
+- [ ] Mobiilikoe: työntekijän tuntikirjaus, menomatka ja paluumatka tallentuvat.
+- [ ] Mobiilikoe: vanhaa kirjausta muokattaessa matka-ajat näkyvät ja muutos onnistuu työnjohtoroolilla.
+- [ ] Mobiilikoe: tuntiyhteenveto ja matka-aika näkyvät erillisinä myös arkistoidulla työmaalla.
+- [ ] Mobiilikoe: päivärajojen, yömatkan ja aikavyöhykkeen oikeellisuus.
+- [ ] Mobiilikoe: yhteenveto-CSV ja selaimen PDF-tulostus toimivat.
+- [ ] Palkanlaskijan hyväksyntä lopulliselle PDF-asettelulle, matkustusajan luokitukselle ja korvauksille.
