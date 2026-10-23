@@ -48,3 +48,13 @@ V0.2A on käytännön kokeilu, **ei työaikakirjanpidon tai tietosuojan vaatimus
 - [ ] Hyväksytyt ja käsiteltävät työtunnit eivät sekoitu.
 - [ ] CSV aukeaa mobiilissa ja Excelissä oikeina sarakkeina.
 - [ ] Palkanlaskija hyväksyy lopullisen kenttä- ja tiedostomuodon ennen tuotantokäyttöä.
+
+## v0.2A.3 – palkalliset ruokatauot
+
+- [x] Uuden kirjauksen oletus `break_minutes=0` ohjelman tarkistuksessa.
+- [x] Valinnainen palkaton tauko -kytkin, käytössä 30 minuutin aloitusarvo.
+- [x] Vanhan kirjausrivin taukominutit säilyvät muokkauslomakkeelle ladattaessa.
+- [ ] Mobiilissa 07–15 = 8 h, kun palkaton tauko ei ole valittuna.
+- [ ] Mobiilissa 07–15 = 7 h 30 min, kun vähennettävä palkaton tauko on 30 min.
+- [ ] Aiemmat 30 minuutin vähennykset eivät muutu eikä niitä muuteta takautuvasti automaattisesti.
+- [ ] Kirjauksen korjauksessa kytkin näkyy vanhojen arvojen mukaan.
