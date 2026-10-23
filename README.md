@@ -96,3 +96,16 @@ Päivityksissä toimitetaan käyttäjälle **vain muuttuneet tiedostot** sekä n
 ## v0.2A.2 – raporttinäkymä
 
 Työnjohto ja pääkäyttäjä saavat **Raportit**-välilehden. Oletuksena kuluva kuukausi, mutta aikarajaus on vapaasti muutettavissa enintään 366 päivään. Suodattimet: työntekijä, työmaa (myös arkistoidut), hyväksyntätila. Yhteenvetotaulukossa tunnit työntekijä–työmaa-pareittain sekä erikseen hyväksytyt ja käsiteltävät tunnit. Päiväkohtainen taulukko ja väliaikainen yhteenveto-CSV ovat mukana. Raporttikysely hakee jakson rivit sivutettuna, ei rajoitu vanhan Työnjohto-näkymän 1000 viimeiseen. Raportin päivärajat tulkitaan Suomen ajassa. Näkymä ei vielä käsittele päivärahoja, kilometrejä eikä matka-aikaa. Nämä määritellään erikseen palkanlaskennan tarkennusten jälkeen. Supabaseen ei tehdä muutoksia raportointia varten.
+
+## v0.2A.4 – Matka-aika oikeasti tallentuvana tietona (23.10.2026)
+
+- Työaikakirjaukseen lisätty **Matka-ajat (valinnainen)** -osio, jossa meno- ja paluumatkalle erikseen lähtö- ja saapumispäivämäärät ja kellonajat. Kesto lasketaan automaattisesti.
+- Sekä ennen työpäivää että sen jälkeen tehdyt matkat tallentuvat samaan tuntikirjaukseen omiin `timestamptz`-kenttiinsä. Jokainen matka voidaan jättää myös kokonaan tyhjäksi.
+- Matka-aika **EI** kuulu kirjattuihin työtunteihin, eikä siitä automaattisesti johdeta korvaus- tai palkkaoikeutta.
+- Yhdellä kirjausrivillä matkavälit eivät saa mennä keskenään tai varsinaisen työajan kanssa päällekkäin. Yön yli voi kirjata valitsemalla seuraavan päivän.
+- Matka-ajat näkyvät omissa ja työnjohdon kirjauksissa, työmaittaisessa/työntekijäkohtaisessa raportissa sekä molemmissa CSV-vienneissä.
+- Raportit-välilehdessä on **Tulosta / Tallenna PDF** -toiminto selaimen tulostusvalinnan kautta (ei vielä omaa serveripuolen PDF-generaattoria).
+- Uudet `create_entry_with_travel` ja `update_entry_with_travel` RPC:t pitävät vanhat funktiot käytettävissä taaksepäin yhteensopivasti ja valvovat samoja jäsenyys-, muokkaus- ja historiarajoituksia kuin tuntikirjaus. Tietokantamuutos: `supabase/migrations/20261023_003_travel_time.sql`.
+- Vanhoille kirjauksille matka-ajat jäävät tyhjiksi, eikä kolmen testikirjauksen työaikoja muuteta.
+
+Matkustusajan työaika- ja korvauskohtelu, kilometrikorvaukset sekä päivärahat ovat edelleen erillisiä tulevia määrityksiä. Asiakkaan näkemys on kerättävä ennen palkkalaskentakäyttöä.
