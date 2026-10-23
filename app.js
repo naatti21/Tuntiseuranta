@@ -142,6 +142,7 @@ function resetForm() {
   $('work-date').value = localYmd(new Date());
   $('start').value='07:00';$('end').value='15:00';
   travelFields.forEach(id=>$(id).value='');
+  $('travel-box').open=false;
   $('unpaid-break-enabled').checked=false;
   $('break').value='0';
   syncUnpaidBreak();
@@ -303,6 +304,7 @@ function editEntry(id) {
   $('travel-out-end').value=localInputDateTime(e.travel_out_end);
   $('travel-back-start').value=localInputDateTime(e.travel_back_start);
   $('travel-back-end').value=localInputDateTime(e.travel_back_end);
+  $('travel-box').open=Boolean(e.travel_out_start||e.travel_back_start);
   $('note').value=e.note||'';
   $('edit-tag').classList.remove('hidden');$('cancel-edit').classList.remove('hidden');
   $('reason-field').classList.remove('hidden');$('reason').required=true;$('reason').value='';
