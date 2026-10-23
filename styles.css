@@ -13,3 +13,25 @@
 .break-toggle input[type="checkbox"]{width:20px;height:20px;min-height:20px;flex:none;padding:0;margin:0;accent-color:#155ab7}
 .break-box p.muted{margin:5px 0 0 30px}
 .break-box #break-field{margin-top:12px}
+
+.travel-box{border:1px solid #dce6ef;background:#f8fafc;border-radius:12px;padding:12px;margin:2px 0}
+.travel-box summary{font-weight:750;cursor:pointer;color:#254b6e;padding:4px 0}
+.travel-box h3{font-size:14px;margin:14px 0 8px}
+.travel-box .travel-calc{font-size:13px;margin:6px 0;color:#3c607f}
+.travel-box .total{margin-top:15px}
+@media print{
+  @page{size:A4 landscape;margin:11mm}
+  body{background:white;color:black}
+  .topbar,.hello,.tabs,#logout,#banner,footer,#setup,#login,
+  #view-new,#view-mine,#view-lead,#view-sites,#view-account,
+  #view-report .report-controls,#view-report .report-toolbar{display:none!important}
+  #app,#view-report{display:block!important}
+  .container{max-width:100%;margin:0;padding:0}
+  #view-report{box-shadow:none;border:0;padding:0;margin:0}
+  #view-report p{font-size:10px}
+  .table-scroll{overflow:visible;border:0}
+  .report-table{min-width:0;width:100%;font-size:9px}
+  .report-table th,.report-table td{padding:5px 4px;white-space:normal}
+  .report-table tr{break-inside:avoid}
+  h2{font-size:18px} h3{font-size:13px}
+}
