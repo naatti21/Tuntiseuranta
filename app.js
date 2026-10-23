@@ -1,4 +1,4 @@
-/* TyömaaTunnit 0.2A.3: yksi yritys, kirjautuminen ja Postgres/RLS.
+/* TyömaaTunnit 0.2A.4: yksi yritys, kirjautuminen ja Postgres/RLS.
  * Ei paikallista työaikatietojen tallennusta. Ei salaisia avaimia selaimessa.
  */
 'use strict';
@@ -37,6 +37,62 @@ function localDateTime(utc) { const d = new Date(utc); return {date:localYmd(d),
 function humanDate(utc) { return new Intl.DateTimeFormat('fi-FI',{timeZone:'Europe/Helsinki',day:'numeric',month:'numeric',year:'numeric'}).format(new Date(utc)); }
 function formatHour(min) { return `${Math.floor(min/60)} h ${String(min%60).padStart(2,'0')} min`; }
 function deltaMins(start, end, breaks=0) { return Math.round((new Date(end).getTime()-new Date(start).getTime())/60000)-breaks; }
+
+const travelFields = ['travel-out-start','travel-out-end','travel-back-start','travel-back-end'];
+const travelColumns = 'travel_out_start,travel_out_end,travel_back_start,travel_back_end';
+function localInputDateTime(utc) {
+  if(!utc)return '';
+  const d=localDateTime(utc);
+  return d.date+'T'+d.time;
+}
+function travelMinutes(e,which) {
+  const a=e[which+'_start'],b=e[which+'_end'];
+  return a&&b ? deltaMins(a,b,0) : 0;
+}
+function travelTotals(e) {
+  const outbound=travelMinutes(e,'travel_out');
+  const inbound=travelMinutes(e,'travel_back');
+  return {outbound,inbound,total:outbound+inbound};
+}
+function fromTravelForm(workStart,workEnd) {
+  const [outStart,outEnd,backStart,backEnd]=travelFields.map(id=>$(id).value);
+  const intervals=[[outStart,outEnd,'Menomatka'],[backStart,backEnd,'Paluumatka']];
+  const parsed=intervals.map(([a,b,name])=>{
+    if(!a&&!b)return [null,null];
+    if(!a||!b)throw Error(name+': täytä lähtö ja saapuminen');
+    const start=new Date(a),end=new Date(b);
+    if(!Number.isFinite(start.getTime())||!Number.isFinite(end.getTime())||
+       end<=start||end-start>24*3600000)
+      throw Error(name+': tarkista päivämäärät ja kellonajat');
+    if(start<new Date(workEnd)&&end>new Date(workStart))
+      throw Error(name+' ja kirjattu työaika eivät saa mennä päällekkäin');
+    return [start,end];
+  });
+  if(parsed[0][0]&&parsed[1][0]&&parsed[0][0]<parsed[1][1]&&parsed[0][1]>parsed[1][0])
+    throw Error('Meno- ja paluumatka eivät saa mennä päällekkäin');
+  return {
+    p_out_start:parsed[0][0]?.toISOString()||null,
+    p_out_end:parsed[0][1]?.toISOString()||null,
+    p_back_start:parsed[1][0]?.toISOString()||null,
+    p_back_end:parsed[1][1]?.toISOString()||null
+  };
+}
+function calculateTravel() {
+  try {
+    // Laske vain valmiit matkajaksot, jotta puoliksi täytetty lomake ei estä työajan näyttämistä.
+    const pairs=[['travel-out-start','travel-out-end','travel-out-duration'],
+      ['travel-back-start','travel-back-end','travel-back-duration']];
+    let total=0;
+    for(const [a,b,target] of pairs) {
+      const from=$(a).value,to=$(b).value;
+      const mins=from&&to ? deltaMins(new Date(from),new Date(to),0) : null;
+      $(target).textContent=mins!==null&&mins>0 ? formatHour(mins) : '—';
+      if(mins!==null&&mins>0)total+=mins;
+    }
+    $('travel-total').textContent=formatHour(total);
+  }catch { $('travel-total').textContent='—'; }
+}
+
 function fromForm() {
   const date = $('work-date').value, start = $('start').value, end = $('end').value;
   if (!date || !start || !end) throw Error('Täytä päivämäärä ja kellonajat');
@@ -62,6 +118,7 @@ function syncUnpaidBreak() {
 function calculate() {
   try { const v = fromForm(); $('net-time').textContent = formatHour(deltaMins(v.p_start,v.p_end,v.p_break)); }
   catch { $('net-time').textContent = '—'; }
+  calculateTravel();
 }
 function fillSelect(select, options, placeholder='', selected='') {
   const el = $(select); el.replaceChildren();
@@ -84,6 +141,7 @@ function resetForm() {
   $('entry-form').reset();
   $('work-date').value = localYmd(new Date());
   $('start').value='07:00';$('end').value='15:00';
+  travelFields.forEach(id=>$(id).value='');
   $('unpaid-break-enabled').checked=false;
   $('break').value='0';
   syncUnpaidBreak();
@@ -119,7 +177,7 @@ async function loadData() {
     members=m.filter(x=>x.active);
     const [org, siteRows, entryRows] = await Promise.all([
       query('organizations','id,name'), query('worksites','id,name,code,active,organization_id'),
-      client.from('time_entries').select('id,employee_id,worksite_id,start_at,end_at,break_minutes,note,status,created_by,updated_by,updated_at,review_reason')
+      client.from('time_entries').select('id,employee_id,worksite_id,start_at,end_at,break_minutes,note,status,created_by,updated_by,updated_at,review_reason,'+travelColumns)
         .order('start_at',{ascending:false}).limit(1000).then(({data,error})=>{if(error)throw error;return data||[];})
     ]);
     if (id!==loadSerial) return;
@@ -154,11 +212,13 @@ function makeEntryCard(e,lead=false) {
   const canEdit=e.status!=='approved' && (isLead() || (e.employee_id===session.user.id && e.status==='needs_changes'));
   const canReview=lead && e.status==='submitted';
   const label = statusText[e.status] || e.status;
+  const trip=travelTotals(e);
   return `<article class="entry">
     <div class="entry-top"><h3>${esc(siteName(e.worksite_id))}</h3><span class="status ${esc(e.status)}">${esc(label)}</span></div>
     ${lead?`<p class="muted">${esc(employeeName(e.employee_id))}</p>`:''}
     <div class="time">${esc(formatHour(min))}</div>
     <p class="muted">${esc(humanDate(e.start_at))} • ${esc(local.time)}–${esc(end.time)} • ${e.break_minutes>0?`palkaton taukovähennys ${e.break_minutes} min`:'ei palkatonta taukovähennystä'}</p>
+    ${trip.total?`<p class="muted"><strong>Matka-aika ${esc(formatHour(trip.total))}</strong> • meno ${esc(formatHour(trip.outbound))}, paluu ${esc(formatHour(trip.inbound))}</p>`:''}
     ${e.note?`<p>${esc(e.note)}</p>`:''}
     ${e.review_reason?`<p class="muted"><strong>Perustelu:</strong> ${esc(e.review_reason)}</p>`:''}
     <div class="actions">
@@ -168,8 +228,9 @@ function makeEntryCard(e,lead=false) {
 }
 function drawSummary(target, array) {
   const minutes=array.reduce((sum,e)=>sum+deltaMins(e.start_at,e.end_at,e.break_minutes),0);
+  const travel=array.reduce((sum,e)=>sum+travelTotals(e).total,0);
   const waiting=array.filter(e=>e.status==='submitted').length;
-  $(target).innerHTML=`<div><strong>${array.length}</strong><span>Kirjauksia (näkymässä)</span></div><div><strong>${esc(formatHour(minutes))}</strong><span>Yhteensä</span></div><div><strong>${waiting}</strong><span>Odottaa käsittelyä</span></div>`;
+  $(target).innerHTML=`<div><strong>${array.length}</strong><span>Kirjauksia (näkymässä)</span></div><div><strong>${esc(formatHour(minutes))}</strong><span>Työaika</span></div><div><strong>${esc(formatHour(travel))}</strong><span>Matka-aika (erillinen)</span></div><div><strong>${waiting}</strong><span>Odottaa käsittelyä</span></div>`;
 }
 function renderMine() {
   if(!myself) return;
@@ -238,6 +299,10 @@ function editEntry(id) {
   $('unpaid-break-enabled').checked=e.break_minutes>0;
   $('break').value=String(e.break_minutes);
   syncUnpaidBreak();
+  $('travel-out-start').value=localInputDateTime(e.travel_out_start);
+  $('travel-out-end').value=localInputDateTime(e.travel_out_end);
+  $('travel-back-start').value=localInputDateTime(e.travel_back_start);
+  $('travel-back-end').value=localInputDateTime(e.travel_back_end);
   $('note').value=e.note||'';
   $('edit-tag').classList.remove('hidden');$('cancel-edit').classList.remove('hidden');
   $('reason-field').classList.remove('hidden');$('reason').required=true;$('reason').value='';
@@ -256,9 +321,10 @@ async function doBusy(operation) {
 async function submitEntry(event) {
   event.preventDefault();
   await doBusy(async()=>{
-    const values=fromForm();
+    const basic=fromForm();
+    const values={...basic,...fromTravelForm(basic.p_start,basic.p_end)};
     if(!values.p_worksite_id)throw Error('Valitse työmaa');
-    const name=editId?'update_entry':'create_entry';
+    const name=editId?'update_entry_with_travel':'create_entry_with_travel';
     const args=editId?{p_entry_id:editId,...values,p_reason:$('reason').value.trim()}:
       {p_employee_id:isLead()?$('worker').value:session.user.id,...values};
     if(editId && args.p_reason.length<3)throw Error('Kirjoita korjauksen perustelu');
@@ -313,13 +379,14 @@ async function loadReport() {
   reportLoading=true;
   $('report-load').disabled=true;
   $('report-file').disabled=true;
+  $('report-pdf').disabled=true;
   $('report-notice').textContent='Ladataan kirjauksia valitulta ajalta…';
   try {
     const all=[];
     const pageSize=500, maxPages=50;
     for(let page=0;page<maxPages;page++) {
       const {data,error}=await client.from('time_entries')
-        .select('id,employee_id,worksite_id,start_at,end_at,break_minutes,status,note')
+        .select('id,employee_id,worksite_id,start_at,end_at,break_minutes,status,note,'+travelColumns)
         .gte('start_at',range.from).lt('start_at',range.until)
         .order('start_at',{ascending:true}).order('id',{ascending:true})
         .range(page*pageSize,(page+1)*pageSize-1);
@@ -344,6 +411,7 @@ async function loadReport() {
     reportLoading=false;
     $('report-load').disabled=false;
     $('report-file').disabled=!reportPeriodLoaded;
+    $('report-pdf').disabled=!reportPeriodLoaded;
   }
 }
 function filteredReport() {
@@ -358,10 +426,11 @@ function reportGroups(rows) {
   for(const e of rows) {
     const key=e.employee_id+'|'+e.worksite_id;
     if(!map.has(key))map.set(key,{
-      employee:e.employee_id,site:e.worksite_id,entries:0,total:0,approved:0,submitted:0,returned:0
+      employee:e.employee_id,site:e.worksite_id,entries:0,total:0,approved:0,submitted:0,returned:0,travelOut:0,travelBack:0
     });
     const r=map.get(key),minutes=deltaMins(e.start_at,e.end_at,e.break_minutes);
-    r.entries++;r.total+=minutes;
+    const trip=travelTotals(e);
+    r.entries++;r.total+=minutes;r.travelOut+=trip.outbound;r.travelBack+=trip.inbound;
     if(e.status==='approved')r.approved+=minutes;
     if(e.status==='submitted')r.submitted+=minutes;
     if(e.status==='needs_changes')r.returned+=minutes;
@@ -374,26 +443,30 @@ function renderReport() {
   if(!isLead()||!reportPeriodLoaded)return;
   const rows=filteredReport(),groups=reportGroups(rows);
   const total=rows.reduce((n,e)=>n+deltaMins(e.start_at,e.end_at,e.break_minutes),0);
+  const travel=rows.reduce((n,e)=>n+travelTotals(e).total,0);
   const approved=rows.filter(e=>e.status==='approved')
     .reduce((n,e)=>n+deltaMins(e.start_at,e.end_at,e.break_minutes),0);
   $('report-notice').textContent='Jakso '+reportPeriodLoaded+
-    ' • '+rows.length+' kirjausta • tunnit eivät sisällä matkustusaikaa tai kulukorvauksia.';
+    ' • '+rows.length+' kirjausta • matka-aika raportoidaan erillään työajasta.';
   $('report-summary').innerHTML=
     '<div><strong>'+rows.length+'</strong><span>Kirjauksia</span></div>'+
     '<div><strong>'+esc(formatHour(total))+'</strong><span>Kaikki tunnit</span></div>'+
-    '<div><strong>'+esc(formatHour(approved))+'</strong><span>Hyväksytyt tunnit</span></div>';
-  const header='<thead><tr><th>Työntekijä</th><th>Työmaa</th><th>Kirjauksia</th><th>Tunnit</th><th>Hyväksytty</th><th>Käsiteltävä</th></tr></thead>';
+    '<div><strong>'+esc(formatHour(approved))+'</strong><span>Hyväksytyt tunnit</span></div>'+
+    '<div><strong>'+esc(formatHour(travel))+'</strong><span>Matka-aika erikseen</span></div>';
+  const header='<thead><tr><th>Työntekijä</th><th>Työmaa</th><th>Kirjauksia</th><th>Työaika</th><th>Hyväksytty</th><th>Käsiteltävä</th><th>Meno</th><th>Paluu</th><th>Matkat yhteensä</th></tr></thead>';
   $('report-groups').innerHTML=groups.length?header+'<tbody>'+groups.map(g=>
     '<tr><td>'+esc(employeeName(g.employee))+'</td><td>'+esc(siteName(g.site))+'</td>'+
     '<td>'+g.entries+'</td><td>'+esc(formatHour(g.total))+'</td>'+
-    '<td>'+esc(formatHour(g.approved))+'</td><td>'+esc(formatHour(g.submitted+g.returned))+'</td></tr>'
+    '<td>'+esc(formatHour(g.approved))+'</td><td>'+esc(formatHour(g.submitted+g.returned))+'</td>'+
+    '<td>'+esc(formatHour(g.travelOut))+'</td><td>'+esc(formatHour(g.travelBack))+'</td>'+
+    '<td>'+esc(formatHour(g.travelOut+g.travelBack))+'</td></tr>'
   ).join('')+'</tbody>':'<tbody><tr><td>Ei kirjauksia valitulla rajauksella.</td></tr></tbody>';
   $('report-detail').innerHTML=rows.length?
-    '<thead><tr><th>Päivä</th><th>Työntekijä</th><th>Työmaa</th><th>Tunnit</th><th>Tila</th></tr></thead><tbody>'+
+    '<thead><tr><th>Päivä</th><th>Työntekijä</th><th>Työmaa</th><th>Työaika</th><th>Matka-aika</th><th>Tila</th></tr></thead><tbody>'+
     rows.map(e=>'<tr><td>'+esc(helsinkiYmd(e.start_at))+'</td><td>'+
       esc(employeeName(e.employee_id))+'</td><td>'+esc(siteName(e.worksite_id))+'</td>'+
       esc(formatHour(deltaMins(e.start_at,e.end_at,e.break_minutes)))+
-      '</td><td>'+esc(statusText[e.status]||e.status)+'</td></tr>').join('')+'</tbody>':'';
+      '</td><td>'+esc(formatHour(travelTotals(e).total))+'</td><td>'+esc(statusText[e.status]||e.status)+'</td></tr>').join('')+'</tbody>':'';
 }
 function exportReportCsv() {
   if(!isLead()||!reportPeriodLoaded)return;
@@ -401,12 +474,15 @@ function exportReportCsv() {
   const lines=[
     ['Tuntiseuranta – työmaayhteenveto'],
     ['Alku', $('report-start').value,'Loppu',$('report-end').value],
-    ['Työntekijä','Työmaa','Kirjauksia','Tunnit yhteensä','Hyväksytyt tunnit','Käsiteltävät tunnit'],
+    ['Työntekijä','Työmaa','Kirjauksia','Työaika yhteensä','Hyväksytyt tunnit','Käsiteltävät tunnit','Menomatka (h)','Paluumatka (h)','Matka-aika yhteensä (h)'],
     ...groups.map(g=>[
       employeeName(g.employee),siteName(g.site),g.entries,
       (g.total/60).toFixed(2).replace('.',','),
       (g.approved/60).toFixed(2).replace('.',','),
-      ((g.submitted+g.returned)/60).toFixed(2).replace('.',',')
+      ((g.submitted+g.returned)/60).toFixed(2).replace('.',','),
+      (g.travelOut/60).toFixed(2).replace('.',','),
+      (g.travelBack/60).toFixed(2).replace('.',','),
+      ((g.travelOut+g.travelBack)/60).toFixed(2).replace('.',',')
     ])
   ].map(columns=>columns.map(csvField).join(';')).join('\r\n');
   const url=URL.createObjectURL(new Blob(['\ufeff',lines],{type:'text/csv;charset=utf-8;'}));
@@ -426,11 +502,14 @@ function csvField(raw) {
 function exportCsv() {
   if(!isLead())return;
   const rows=filteredLead();
-  const output=[['Työntekijä','Työmaa','Päivä','Alku (Suomen aika)','Loppu (Suomen aika)','Tauko (min)','Työaika (h)','Tila','Huomautus'],
+  const output=[['Työntekijä','Työmaa','Päivä','Alku (Suomen aika)','Loppu (Suomen aika)','Tauko (min)','Työaika (h)','Menomatka alku','Menomatka loppu','Paluumatka alku','Paluumatka loppu','Matka-aika yhteensä (h)','Tila','Huomautus'],
     ...rows.map(e=>[employeeName(e.employee_id),siteName(e.worksite_id),humanDate(e.start_at),
       new Date(e.start_at).toLocaleString('fi-FI',{timeZone:'Europe/Helsinki'}),
       new Date(e.end_at).toLocaleString('fi-FI',{timeZone:'Europe/Helsinki'}),
-      e.break_minutes,(deltaMins(e.start_at,e.end_at,e.break_minutes)/60).toFixed(2).replace('.',','),statusText[e.status]||e.status,e.note])]
+      e.break_minutes,(deltaMins(e.start_at,e.end_at,e.break_minutes)/60).toFixed(2).replace('.',','),
+      e.travel_out_start?localInputDateTime(e.travel_out_start):'',e.travel_out_end?localInputDateTime(e.travel_out_end):'',
+      e.travel_back_start?localInputDateTime(e.travel_back_start):'',e.travel_back_end?localInputDateTime(e.travel_back_end):'',
+      (travelTotals(e).total/60).toFixed(2).replace('.',','),statusText[e.status]||e.status,e.note])]
     .map(r=>r.map(csvField).join(';')).join('\r\n');
   const url=URL.createObjectURL(new Blob(['\ufeff',output],{type:'text/csv;charset=utf-8;'}));
   const a=document.createElement('a');a.href=url;a.download=`tyomaatunnit-${localYmd(new Date())}.csv`;document.body.append(a);a.click();a.remove();
@@ -454,7 +533,7 @@ function wire() {
   document.querySelectorAll('[data-view]').forEach(el=>el.addEventListener('click',()=>setView(el.dataset.view)));
   $('entry-form').addEventListener('submit',submitEntry);
   $('cancel-edit').addEventListener('click',resetForm);
-  ['work-date','start','end','break'].forEach(id=>$(id).addEventListener('input',calculate));
+  ['work-date','start','end','break',...travelFields].forEach(id=>$(id).addEventListener('input',calculate));
   $('unpaid-break-enabled').addEventListener('change',syncUnpaidBreak);
   $('mine-list').addEventListener('click',handleEntryButton);
   $('lead-list').addEventListener('click',handleEntryButton);
@@ -468,9 +547,11 @@ function wire() {
   ['report-start','report-end'].forEach(id=>$(id).addEventListener('change',()=>{
     reportPeriodLoaded='';
     $('report-file').disabled=true;
+    $('report-pdf').disabled=true;
     $('report-notice').textContent='Aikaväli muuttui. Paina Hae raportti.';
   }));
   $('report-file').addEventListener('click',exportReportCsv);
+  $('report-pdf').addEventListener('click',()=>{if(isLead()&&reportPeriodLoaded)window.print();});
   $('refresh-mine').addEventListener('click',loadData);
   $('refresh-lead').addEventListener('click',loadData);
   $('sites-list').addEventListener('click',handleSiteAction);
