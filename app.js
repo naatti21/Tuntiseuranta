@@ -434,7 +434,7 @@ function filteredReport() {
   if(!reportPeriodLoaded)return [];
   const employee=$('report-worker').value, worksite=$('report-site').value,
     status=$('report-status').value;
-  return reportEntries.filter(e=>(!employee||e.employee_id===employee)
+  return reportEntries.filter(e=>isWorkerEntry(e)&&(!employee||e.employee_id===employee)
     && (!worksite||e.worksite_id===worksite)&&(!status||e.status===status));
 }
 function reportGroups(rows) {
@@ -485,7 +485,7 @@ function renderReport() {
   $('report-detail').innerHTML=rows.length?
     '<thead><tr><th>Päivä</th><th>Työntekijä</th><th>Työmaa</th><th>Työaika</th><th>Matka-aika</th><th>Tila</th></tr></thead><tbody>'+
     rows.map(e=>'<tr><td>'+esc(helsinkiYmd(e.start_at))+'</td><td>'+
-      esc(employeeName(e.employee_id))+'</td><td>'+esc(siteName(e.worksite_id))+'</td>'+
+      esc(employeeName(e.employee_id))+'</td><td>'+esc(siteName(e.worksite_id))+'</td><td>'+
       esc(formatHour(deltaMins(e.start_at,e.end_at,e.break_minutes)))+
       '</td><td>'+esc(formatHour(travelTotals(e).total))+'</td><td>'+esc(statusText[e.status]||e.status)+'</td></tr>').join('')+'</tbody>':'';
 }
