@@ -109,3 +109,13 @@ Työnjohto ja pääkäyttäjä saavat **Raportit**-välilehden. Oletuksena kuluv
 - Vanhoille kirjauksille matka-ajat jäävät tyhjiksi, eikä kolmen testikirjauksen työaikoja muuteta.
 
 Matkustusajan työaika- ja korvauskohtelu, kilometrikorvaukset sekä päivärahat ovat edelleen erillisiä tulevia määrityksiä. Asiakkaan näkemys on kerättävä ennen palkkalaskentakäyttöä.
+
+## v0.2A.5 – kevyt käytettävyysparannus (23.10.2026)
+
+- Pääkäyttäjällä oletusnäkymänä **Hyväksynnät**; hänen oma Kirjaa- ja Omat tunnit -valikkonsa on piilotettu. Työnjohtajan rooli säilyy erillisenä ja voi edelleen kirjata.
+- Vanhaa pääkäyttäjän omaa kokeilukirjausta ei muuteta eikä poisteta. Se piilotetaan työntekijöiden yhteenvedoista ja viennistä. Tarvittaessa mitätöinti suunnitellaan erikseen audit-lokin kanssa.
+- Työntekijän kirjaus käyttää viimeksi valittua aktiivista työmaata, mikäli sellainen löytyy viimeisimmistä kirjauksista. Muuten ainoa aktiivinen työmaa esivalitaan. Palkattoman tauon valinta ja lisätiedot ovat valinnaisen avattavan osion takana.
+- Mobiiliraportissa näytetään ensin selkeät työntekijä/työmaa-kohtaiset yhteenvetokortit, joiden työ- ja matka-ajat pysyvät erillisinä. Tarkat taulukot voi avata erikseen ja ne avataan PDF-tulostukseen.
+- Värit vaihdettu hillittyyn siniharmaaseen, ei puhtaaseen valkoiseen sovellusnäkymään.
+- Sovellusta ei ole testattu käyttäjän oikealla puhelimella. Mitään tietokanta- tai palveluasetuksia ei muutettu.
+
