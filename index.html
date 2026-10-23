@@ -12,7 +12,7 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand"><span class="brand-icon">TT</span><div><strong>TyömaaTunnit</strong><small>Yrityspilotti • v0.2A.4</small></div></div>
+    <div class="brand"><span class="brand-icon">TT</span><div><strong>TyömaaTunnit</strong><small>Yrityspilotti • v0.2A.5</small></div></div>
     <button id="logout" class="btn ghost hidden" type="button">Kirjaudu ulos</button>
   </header>
   <main class="container">
@@ -39,26 +39,29 @@
         <span id="connection" class="connect online">Verkkoyhteys vaaditaan</span>
       </div>
       <nav class="tabs" aria-label="Päävalikko">
-        <button type="button" data-view="new" class="tab active">Kirjaa</button>
-        <button type="button" data-view="mine" class="tab">Omat tunnit</button>
-        <button type="button" data-view="lead" class="tab lead-only hidden">Työnjohto</button>
+        <button type="button" data-view="new" class="tab active admin-hide">Kirjaa</button>
+        <button type="button" data-view="mine" class="tab admin-hide">Omat tunnit</button>
+        <button type="button" data-view="lead" class="tab lead-only hidden">Hyväksynnät</button>
         <button type="button" data-view="report" class="tab lead-only hidden">Raportit</button>
         <button type="button" data-view="sites" class="tab admin-only hidden">Työmaat</button>
         <button type="button" data-view="account" class="tab">Tili</button>
       </nav>
       <section id="view-new" class="view card">
-        <div class="section-title"><div><p class="eyebrow">Uusi merkintä</p><h2>Kirjaa työtunnit</h2></div><span id="edit-tag" class="status hidden">Korjaus</span></div>
-        <p class="muted">Yksi rivi = yksi työmaa ja yksi aikaväli. Lisää päivän toinen työmaa omana kirjauksenaan.</p>
+        <div class="section-title"><div><p class="eyebrow">Nopea tuntikirjaus</p><h2>Kirjaa työpäivä</h2></div><span id="edit-tag" class="status hidden">Korjaus</span></div>
+        <p class="muted tiny entry-hint">Työmaa valitaan edellisen kirjauksen perusteella. Tarkista tiedot ennen lähetystä.</p>
         <form id="entry-form" class="stack">
           <label class="lead-only hidden">Työntekijä<select id="worker" required></select></label>
           <label>Työmaa<select id="worksite" required></select></label>
           <label>Päivämäärä<input id="work-date" type="date" required/></label>
           <div class="two"><label>Alkaa<input id="start" type="time" value="07:00" required/></label><label>Päättyy<input id="end" type="time" value="15:00" required/></label></div>
+          <details class="entry-extras" id="entry-extras"><summary>Tauko ja lisätiedot (valinnainen)</summary>
           <div class="break-box">
             <label class="break-toggle" for="unpaid-break-enabled"><input id="unpaid-break-enabled" type="checkbox"/> Vähennä palkaton tauko</label>
             <p class="muted tiny">Oletuksena ei vähennystä. Palkallinen ruokatauko sisältyy työaikaan.</p>
             <label id="break-field" class="hidden">Vähennettävä palkaton tauko (min)<input id="break" type="number" min="1" max="1439" value="0" step="1" disabled/></label>
           </div>
+          <label>Lisätiedot (valinnainen)<textarea id="note" rows="2" maxlength="500" placeholder="Esim. asennustyö, korjaus..."></textarea></label>
+          </details>
           <div class="total"><span>Kirjattava työaika</span><strong id="net-time">8 h 00 min</strong></div>
           <details class="travel-box" id="travel-box">
             <summary>Matka-ajat (valinnainen)</summary>
@@ -77,7 +80,6 @@
             <p class="travel-calc">Paluumatkan kesto: <strong id="travel-back-duration">—</strong></p>
             <div class="total"><span>Matka-aika yhteensä (erillään työajasta)</span><strong id="travel-total">0 h 00 min</strong></div>
           </details>
-          <label>Lisätiedot (valinnainen)<textarea id="note" rows="2" maxlength="500" placeholder="Esim. asennustyö, korjaus..."></textarea></label>
           <label id="reason-field" class="hidden">Korjauksen perustelu<textarea id="reason" rows="2" minlength="3" maxlength="500" placeholder="Miksi kirjausta korjataan?"></textarea></label>
           <div class="actions"><button type="submit" id="submit-entry" class="btn primary">Lähetä tunnit</button><button type="button" id="cancel-edit" class="btn ghost hidden">Peruuta korjaus</button></div>
         </form>
@@ -87,13 +89,13 @@
         <div id="mine-summary" class="summary"></div><div id="mine-list" class="entries"></div>
       </section>
       <section id="view-lead" class="view card hidden">
-        <div class="section-title"><div><p class="eyebrow">Työnjohto</p><h2>Kaikkien kirjaukset</h2></div><button id="refresh-lead" class="btn ghost" type="button">Päivitä</button></div>
-        <div class="two"><label>Työntekijä<select id="filter-worker"></select></label><label>Tila<select id="filter-status"><option value="">Kaikki</option><option value="submitted">Odottaa hyväksyntää</option><option value="needs_changes">Palautettu</option><option value="approved">Hyväksytty</option></select></label></div>
+        <div class="section-title"><div><p class="eyebrow">Tarkista ja hyväksy</p><h2>Työntekijöiden kirjaukset</h2></div><button id="refresh-lead" class="btn ghost" type="button">Päivitä</button></div>
+        <div class="two"><label>Työntekijä<select id="filter-worker"></select></label><label>Tila<select id="filter-status"><option value="">Kaikki</option><option value="submitted" selected>Odottaa hyväksyntää</option><option value="needs_changes">Palautettu</option><option value="approved">Hyväksytty</option></select></label></div>
         <div class="actions"><button id="csv-export" class="btn secondary" type="button">Vie näkyvät CSV</button></div>
         <div id="lead-summary" class="summary"></div><div id="lead-list" class="entries"></div>
       </section>
       <section id="view-report" class="view card hidden">
-        <p class="eyebrow">Työnjohdon raportointi</p><h2>Työmaa- ja työntekijäyhteenveto</h2>
+        <p class="eyebrow">Työaika ja matkat</p><h2>Kuukausiraportti</h2>
         <p class="muted">Oletuksena kuluva kuukausi. Voit rajata minkä tahansa ajanjakson (enintään vuoden) ja näyttää arkistoidutkin työmaat.</p>
         <div class="report-controls"><div class="two">
           <label>Alkaen<input id="report-start" type="date" required></label>
@@ -116,15 +118,19 @@
         </div>
         <p id="report-notice" class="muted tiny" role="status">Valitse Hae raportti.</p>
         <div id="report-summary" class="summary"></div>
-        <h3>Yhteenveto työntekijöittäin ja työmaittain</h3>
-        <div class="table-scroll"><table class="report-table" id="report-groups"></table></div>
+        <h3>Työntekijöiden yhteenvedot</h3>
+        <div id="report-cards" class="report-cards" aria-live="polite"></div>
+        <details class="report-table-toggle" id="report-groups-toggle"><summary>Näytä tarkka yhteenvetotaulukko</summary>
+          <div class="table-scroll"><table class="report-table" id="report-groups"></table></div>
+        </details>
         <div class="actions report-toolbar">
           <button id="report-file" class="btn secondary" type="button" disabled>Vie yhteenveto CSV</button>
           <button id="report-pdf" class="btn secondary" type="button" disabled>Tulosta / Tallenna PDF</button>
         </div>
         <p class="muted tiny">Raportti erottaa hyväksytyt ja vielä käsiteltävät tunnit. CSV on väliaikainen tiedostomuoto; lopullinen palkanlaskentapohja sovitaan yrityksen kanssa.</p>
-        <h3>Päiväkohtaiset merkinnät</h3>
-        <div class="table-scroll"><table class="report-table" id="report-detail"></table></div>
+        <details class="report-table-toggle report-detail-toggle" id="report-detail-toggle"><summary>Päiväkohtaiset merkinnät</summary>
+          <div class="table-scroll"><table class="report-table" id="report-detail"></table></div>
+        </details>
       </section>
       <section id="view-sites" class="view card hidden">
         <p class="eyebrow">Pääkäyttäjä</p><h2>Lisää työmaa</h2>
@@ -140,7 +146,7 @@
         <p class="muted tiny">Älä käytä samaa salasanaa muissa palveluissa. Pääkäyttäjällä ei ole pääsyä käyttäjän salasanaan.</p>
       </section>
     </section>
-    <footer>TyömaaTunnit v0.2A.4 • Verkkoyhteys tarvitaan tallennukseen • Ei vielä hyväksytty viralliseen työaikakirjanpitoon</footer>
+    <footer>TyömaaTunnit v0.2A.5 • Verkkoyhteys tarvitaan tallennukseen • Ei vielä hyväksytty viralliseen työaikakirjanpitoon</footer>
   </main>
   <script src="./config.js"></script>
   <script type="module" src="./app.js"></script>
